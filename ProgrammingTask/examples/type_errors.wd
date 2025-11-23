@@ -1,0 +1,4 @@
+int* p;
+int* q;
+int r;
+r := p + q

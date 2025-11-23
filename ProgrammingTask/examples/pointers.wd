@@ -1,0 +1,6 @@
+int* p;
+int x;
+x := 5;
+p := &x;
+int y;
+y := *p

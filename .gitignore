@@ -1,0 +1,50 @@
+# 编译产物
+build/
+bin/
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.out
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# 生成的文件
+src/parser.c
+src/parser.h
+src/lexer.c
+build/parser.c
+build/parser.h
+build/lexer.c
+ProgrammingTask/build/parser.c
+ProgrammingTask/build/parser.h
+ProgrammingTask/build/lexer.c
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.log
+*.bak
+*.backup
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
