@@ -123,6 +123,120 @@ cmake ..
 cmake --build .
 ```
 
+## Flex 和 Bison 工具使用指南
+
+### Flex (词法分析器生成器)
+
+**文件**：`src/lexer.l`
+
+**作用**：将词法规则转换为 C 代码的词法分析器
+
+**核心概念**：
+- 正则表达式匹配源文本中的 token
+- 对每个 token 执行对应的 C 代码动作
+- 将 token 返回给 parser，或通过 `yylval` 传递语义值
+
+**关键变量**：
+- `yytext` - 当前匹配的文本
+- `yylineno` - 当前行号
+- `yylval` - 传递给 parser 的语义值（类型由 Bison 的 `%union` 定义）
+
+**生成命令**：
+```bash
+flex -o build/lexer.c src/lexer.l
+```
+
+**输出文件**：
+- `build/lexer.c` - C 代码实现
+- 需要 Bison 生成的 `parser.h` 才能编译
+
+### Bison (语法分析器生成器)
+
+**文件**：`src/parser.y`
+
+**作用**：将 BNF 文法规则转换为 C 代码的语法分析器
+
+**核心概念**：
+- 使用 BNF 文法定义语言语法
+- 每条规则可以关联一个 C 代码动作
+- 通过 `$$` 和 `$1, $2, ...` 访问语义值
+
+**关键指令**：
+- `%token` - 声明终结符（token）及其类型
+- `%type` - 声明非终结符及其类型
+- `%union` - 定义语义值的联合体类型
+- `%left / %right` - 定义操作符的结合性和优先级
+
+**生成命令**：
+```bash
+bison -d -o build/parser.c src/parser.y
+```
+
+**输出文件**：
+- `build/parser.c` - C 代码实现
+- `build/parser.h` - 头文件（包含 token 定义和 `yylval` 类型）
+
+选项说明：
+- `-d` - 生成 `.h` 头文件
+- `-o FILE` - 指定输出文件名
+
+### 完整编译流程
+
+```bash
+# 步骤 1: 使用 Flex 生成词法分析器
+flex -o build/lexer.c src/lexer.l
+
+# 步骤 2: 使用 Bison 生成语法分析器
+bison -d -o build/parser.c src/parser.y
+
+# 步骤 3: 编译所有 C 源文件（包括生成的）
+gcc -std=c99 -Wall -Iinclude -Ibuild \
+    -o build/bin/whiled \
+    build/lexer.c build/parser.c \
+    src/main.c src/driver.c src/ast.c src/type.c \
+    src/symtab.c src/analyze.c src/ast_printer.c src/util.c
+
+# 或使用 Makefile（自动化）
+make
+```
+
+### 工作流程图
+
+```
+源代码文件 (input.wd)
+           ↓
+      词法分析 (Flex)
+           ↓
+      token 流
+           ↓
+      语法分析 (Bison) + 语义动作
+           ↓
+      抽象语法树 (AST)
+           ↓
+      语义分析 (类型检查、类型转换)
+           ↓
+      类型化 AST (带隐式转换)
+```
+
+### Makefile 和 CMakeLists.txt 中的自动化
+
+我们的构建系统已经自动集成了 Flex 和 Bison 的调用：
+
+**使用 Makefile**：
+```bash
+cd ProgrammingTask
+make  # 自动调用 flex 和 bison，然后编译所有文件
+```
+
+**使用 CMake**：
+```bash
+mkdir build && cd build
+cmake ..
+cmake --build .  # 自动调用 flex 和 bison，然后编译
+```
+
+两种方法都会自动处理生成器的调用和依赖关系
+
 ## 使用示例
 
 ### 编译和运行编译器
