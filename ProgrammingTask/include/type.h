@@ -1,46 +1,43 @@
 #ifndef TYPE_H
 #define TYPE_H
 
-/**
- * 基本类型枚举
- */
+#include <stdbool.h>
+#include <stddef.h>
+
 typedef enum {
-    TYPE_SHORT,       // short
-    TYPE_INT,         // int
-    TYPE_LONG,        // long
-    TYPE_LONG_LONG,   // long long
-    TYPE_VOID,        // void (暂未使用)
-    TYPE_ERROR        // 错误类型
-} base_type_t;
+    TYPE_SHORT,
+    TYPE_INT,
+    TYPE_LONG,
+    TYPE_LLONG,
+    TYPE_PTR,       // pointer to another type
+    TYPE_ERROR      // used for type-checking failure recovery
+} TypeKind;
 
-/**
- * 完整类型表示（支持指针）
- */
-typedef struct type {
-    base_type_t base;
-    int pointer_level;  // 0: 非指针，1: T*，2: T**，等等
-} type_t;
+typedef struct Type {
+    TypeKind kind;
+    struct Type *base;     // NULL unless kind == TYPE_PTR
+} Type;
 
-/* 类型构造函数 */
-type_t* type_new(base_type_t base, int pointer_level);
-type_t* type_copy(const type_t* type);
-void type_free(type_t* type);
+/* Constructors */
+Type *type_make_basic(TypeKind k);
+Type *type_make_ptr(Type *base);
 
-/* 类型比较 */
-int type_equal(const type_t* t1, const type_t* t2);
-int type_compatible(const type_t* from, const type_t* to);
+/* Type comparison */
+bool type_equal(Type *a, Type *b);
 
-/* 类型转换规则 */
-type_t* type_promote(const type_t* t1, const type_t* t2);
-int type_can_cast(const type_t* from, const type_t* to);
+/* Type utilities */
+bool type_is_integer(Type *t);
+bool type_is_pointer(Type *t);
+int  type_rank(Type *t);       // for implicit conversion ranking
 
-/* 判断函数 */
-int type_is_integer(const type_t* type);
-int type_is_pointer(const type_t* type);
-int type_is_numeric(const type_t* type);
+/* Type conversion check */
+bool type_can_convert(Type *from, Type *to);
+Type *type_common(Type *a, Type *b);  // find common type for binary op
 
-/* 字符串表示 */
-char* type_to_string(const type_t* type);
-const char* base_type_to_string(base_type_t base);
+/* Memory deallocation */
+void type_free(Type *t);
 
-#endif // TYPE_H
+/* Pretty printing */
+void type_print(Type *t);
+
+#endif

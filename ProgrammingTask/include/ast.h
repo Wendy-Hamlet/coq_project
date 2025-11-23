@@ -1,155 +1,138 @@
 #ifndef AST_H
 #define AST_H
 
-#include <stddef.h>
+#include "type.h"
+#include <stdbool.h>
 
-/**
- * 抽象语法树节点类型
- */
 typedef enum {
-    // 表达式
-    AST_NUMBER,          // 数字常量
-    AST_IDENT,           // 标识符
-    AST_BINOP,           // 二元操作
-    AST_UNOP,            // 一元操作
-    AST_CAST,            // 类型转换
-    AST_DEREF,           // 解引用
-    AST_ADDRESS,         // 取地址
+    AST_INT_LITERAL,
+    AST_VAR,
+    AST_BINOP,
+    AST_UNOP,      // unary minus
+    AST_CAST,
+    AST_ADDR,      // address-of (&)
+    AST_DEREF      // dereference (*)
+} ExprKind;
 
-    // 语句
-    AST_ASSIGN,          // 赋值
-    AST_DECL,            // 变量声明
-    AST_WHILE,           // While 循环
-    AST_IF,              // If-Then-Else
-    AST_SEQ,             // 语句序列
-    AST_SKIP,            // Skip
-    
-    // 程序
-    AST_PROGRAM          // 程序
-} ast_node_type_t;
-
-/**
- * 二元操作符
- */
 typedef enum {
-    BINOP_PLUS,
-    BINOP_MINUS,
-    BINOP_MULT,
-    BINOP_DIV,
-    BINOP_MOD,
-    BINOP_EQ,
-    BINOP_NEQ,
-    BINOP_LT,
-    BINOP_LTE,
-    BINOP_GT,
-    BINOP_GTE,
-    BINOP_AND,
-    BINOP_OR
-} binop_t;
+    BIN_ADD,
+    BIN_SUB,
+    BIN_MUL,
+    BIN_DIV,
+    BIN_MOD,    // modulo operator
+    BIN_EQ,
+    BIN_NEQ,
+    BIN_LT,
+    BIN_GT,
+    BIN_LE,
+    BIN_GE
+} BinOp;
 
-/**
- * 一元操作符
- */
-typedef enum {
-    UNOP_NEG,            // 负号
-    UNOP_NOT             // 逻辑非
-} unop_t;
+/* Forward declarations */
+struct Expr;
+struct Stmt;
 
-/**
- * AST 节点
- */
-typedef struct ast_node {
-    ast_node_type_t type;
-    int line;            // 源代码行号
-    int column;          // 源代码列号
-    
+/* Expression node */
+typedef struct Expr {
+    ExprKind kind;
+
+    Type *expr_type;      // type after inference
+    Type *cast_to;        // used only after implicit conversion phase; may be NULL
+
     union {
-        // AST_NUMBER
+        long long int_val;
+
+        /* variable */
+        const char *var_name;
+
+        /* unary operation */
         struct {
-            long value;
-        } number;
-        
-        // AST_IDENT
-        struct {
-            char* name;
-        } ident;
-        
-        // AST_BINOP
-        struct {
-            binop_t op;
-            struct ast_node* left;
-            struct ast_node* right;
-        } binop;
-        
-        // AST_UNOP
-        struct {
-            unop_t op;
-            struct ast_node* operand;
+            struct Expr *e;
         } unop;
-        
-        // AST_CAST
+
+        /* binary operation */
         struct {
-            struct ast_node* expr;
-            // type 在语义分析阶段填充
+            BinOp op;
+            struct Expr *lhs;
+            struct Expr *rhs;
+        } binop;
+
+        /* (T) e cast */
+        struct {
+            Type *to_type;
+            struct Expr *e;
         } cast;
-        
-        // AST_DEREF, AST_ADDRESS
+    } v;
+} Expr;
+
+/* Statement kinds */
+typedef enum {
+    STMT_SKIP,
+    STMT_SEQ,
+    STMT_ASSIGN,
+    STMT_DECL,
+    STMT_IF,
+    STMT_WHILE
+} StmtKind;
+
+/* Statement node */
+typedef struct Stmt {
+    StmtKind kind;
+
+    union {
+        /* seq: s1; s2 */
+        struct { struct Stmt *s1, *s2; } seq;
+
+        /* x = e */
         struct {
-            struct ast_node* expr;
-        } unary_expr;
-        
-        // AST_ASSIGN
-        struct {
-            char* var_name;
-            struct ast_node* expr;
+            const char *lhs;
+            Expr *rhs;
         } assign;
-        
-        // AST_DECL
+
+        /* type x; body */
         struct {
-            char* var_name;
-            // type 信息存储在符号表
+            Type *decl_type;
+            const char *var_name;
+            struct Stmt *body;
         } decl;
-        
-        // AST_WHILE
+
+        /* if (cond) then s1 else s2 */
         struct {
-            struct ast_node* condition;
-            struct ast_node* body;
-        } while_loop;
-        
-        // AST_IF
+            Expr *cond;
+            struct Stmt *then_branch;
+            struct Stmt *else_branch;
+        } ifstmt;
+
+        /* while (cond) do body */
         struct {
-            struct ast_node* condition;
-            struct ast_node* then_branch;
-            struct ast_node* else_branch;
-        } if_stmt;
-        
-        // AST_SEQ
-        struct {
-            struct ast_node** statements;
-            size_t count;
-        } seq;
-        
-    } data;
-} ast_node_t;
+            Expr *cond;
+            struct Stmt *body;
+        } whilestmt;
+    } v;
+} Stmt;
 
-/* 构造函数 */
-ast_node_t* ast_number_new(long value, int line, int column);
-ast_node_t* ast_ident_new(const char* name, int line, int column);
-ast_node_t* ast_binop_new(binop_t op, ast_node_t* left, ast_node_t* right);
-ast_node_t* ast_unop_new(unop_t op, ast_node_t* operand);
-ast_node_t* ast_assign_new(const char* var_name, ast_node_t* expr);
-ast_node_t* ast_decl_new(const char* var_name, int line, int column);
-ast_node_t* ast_while_new(ast_node_t* condition, ast_node_t* body);
-ast_node_t* ast_if_new(ast_node_t* condition, ast_node_t* then_branch, ast_node_t* else_branch);
-ast_node_t* ast_seq_new(ast_node_t** statements, size_t count);
-ast_node_t* ast_cast_new(ast_node_t* expr);
-ast_node_t* ast_deref_new(ast_node_t* expr);
-ast_node_t* ast_address_new(ast_node_t* expr);
+/* Summary: constructors */
+Expr *ast_int_literal(long long v);
+Expr *ast_var(const char *name);
+Expr *ast_binop(BinOp op, Expr *l, Expr *r);
+Expr *ast_unop(Expr *e);                     // unary minus
+Expr *ast_addr(Expr *e);                     // address-of (&)
+Expr *ast_deref(Expr *e);                    // dereference (*)
+Expr *ast_cast(Type *t, Expr *e);
 
-/* 析构函数 */
-void ast_node_free(ast_node_t* node);
+Stmt *ast_skip();
+Stmt *ast_seq(Stmt *s1, Stmt *s2);
+Stmt *ast_assign(const char *lhs, Expr *rhs);
+Stmt *ast_decl(Type *t, const char *var, Stmt *body);
+Stmt *ast_if(Expr *c, Stmt *t, Stmt *e);
+Stmt *ast_while(Expr *c, Stmt *body);
 
-/* 工具函数 */
-void ast_print(ast_node_t* node, int indent);
+/* Memory deallocation */
+void ast_free_expr(Expr *e);
+void ast_free_stmt(Stmt *s);
 
-#endif // AST_H
+/* Pretty printing utilities */
+void ast_print_expr(Expr *e, int indent);
+void ast_print_stmt(Stmt *s, int indent);
+
+#endif

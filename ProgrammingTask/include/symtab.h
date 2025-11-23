@@ -2,43 +2,28 @@
 #define SYMTAB_H
 
 #include "type.h"
+#include <stdbool.h>
 
-/**
- * 符号表项
- */
-typedef struct symbol {
-    char* name;
-    type_t* type;
-    int is_initialized;
-    int line_declared;    // 声明行号
-} symbol_t;
+typedef struct Symbol {
+    const char *name;
+    Type *type;
+    struct Symbol *next;
+} Symbol;
 
-/**
- * 作用域
- */
-typedef struct scope {
-    symbol_t** symbols;
-    int count;
-    int capacity;
-    struct scope* parent;  // 指向外层作用域
-} scope_t;
+typedef struct SymTab {
+    Symbol *symbols;
+    struct SymTab *parent;
+} SymTab;
 
-/* 符号表接口 */
-void symtab_init(void);
-void symtab_cleanup(void);
+/* Scope management */
+SymTab *symtab_push(SymTab *parent);
+SymTab *symtab_pop(SymTab *tab);
 
-/* 作用域操作 */
-void symtab_push_scope(void);
-void symtab_pop_scope(void);
+/* Insert and lookup */
+bool symtab_insert(SymTab *tab, const char *name, Type *type);
+Symbol *symtab_lookup(SymTab *tab, const char *name);
 
-/* 符号操作 */
-int symtab_insert(const char* name, type_t* type, int line);
-symbol_t* symtab_lookup(const char* name);
-int symtab_is_declared(const char* name);
-void symtab_mark_initialized(const char* name);
+/* Debug */
+void symtab_print(SymTab *tab);
 
-/* 错误处理 */
-typedef void (*error_handler_t)(const char* message);
-void symtab_set_error_handler(error_handler_t handler);
-
-#endif // SYMTAB_H
+#endif

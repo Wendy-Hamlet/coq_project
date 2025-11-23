@@ -1,24 +1,23 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-/* 内存管理 */
-void* xmalloc(size_t size);
-void* xcalloc(size_t count, size_t size);
-void* xrealloc(void* ptr, size_t size);
-void xfree(void* ptr);
+/* Fatal error with message */
+static inline void die(const char *msg) {
+    fprintf(stderr, "Fatal error: %s\n", msg);
+    exit(1);
+}
 
-/* 字符串操作 */
-char* xstrdup(const char* str);
-char* xstrndup(const char* str, size_t len);
+/* Memory allocation wrapper */
+static inline void *xmalloc(size_t sz) {
+    void *p = malloc(sz);
+    if (!p) die("Out of memory");
+    return p;
+}
 
-/* 错误处理 */
-void error(const char* fmt, ...);
-void warning(const char* fmt, ...);
-void info(const char* fmt, ...);
+/* Duplicate string */
+char *xstrdup(const char *s);
 
-/* 文件操作 */
-char* read_file(const char* filename);
-
-#endif // UTIL_H
+#endif
