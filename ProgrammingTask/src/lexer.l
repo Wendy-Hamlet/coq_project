@@ -1,5 +1,7 @@
 %{
 /* Lexer for typed WhileD language */
+#include "ast.h"
+#include "type.h"
 #include "parser.h"
 #include <string.h>
 
@@ -13,6 +15,7 @@
 
 [ \t\r]+              { /* skip whitespace */ }
 \n                    { /* skip newlines */ }
+#.*                   { /* skip comments */ }
 
 "skip"                { return SKIP; }
 "if"                  { return IF; }
