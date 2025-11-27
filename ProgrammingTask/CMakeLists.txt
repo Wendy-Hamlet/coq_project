@@ -1,13 +1,13 @@
-# ProgrammingTask 子项目
+# ProgrammingTask sub-project
 
-# 包含目录
+# Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# 查找 flex 和 bison
+# Find flex and bison
 find_package(FLEX)
 find_package(BISON)
 
-# 生成 lexer 和 parser
+# Generate lexer and parser
 if(FLEX_FOUND)
     flex_target(Lexer ${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
 endif()

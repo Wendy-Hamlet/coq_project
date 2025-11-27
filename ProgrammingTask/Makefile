@@ -1,4 +1,4 @@
-# Makefile 用于构建带类型 WhileD 编译器 (ProgrammingTask)
+# Makefile for building typed WhileD compiler (ProgrammingTask)
 
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -std=c99
@@ -6,7 +6,7 @@ LEX = flex
 YACC = bison
 YACC_FLAGS = -d
 
-# 项目根目录和任务目录
+# Project directories
 PROJECT_ROOT ?= .
 TASK_DIR = $(PROJECT_ROOT)
 SRC_DIR = $(TASK_DIR)/src
@@ -15,29 +15,35 @@ BUILD_DIR = $(TASK_DIR)/build
 BIN_DIR = $(BUILD_DIR)/bin
 OBJ_DIR = $(BUILD_DIR)/obj
 
-# 源文件
+# Source files
 SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/driver.c $(SRC_DIR)/ast.c \
           $(SRC_DIR)/type.c $(SRC_DIR)/symtab.c $(SRC_DIR)/analyze.c \
-          $(SRC_DIR)/ast_printer.c $(SRC_DIR)/util.c \
-		  $(SRC_DIR)/test_parser.c
+          $(SRC_DIR)/ast_printer.c $(SRC_DIR)/util.c
+
+# Test files
+TEST_DIR = $(TASK_DIR)/tests
+TEST_LEXER = $(TEST_DIR)/test_lexer.c
+TEST_PARSER = $(TEST_DIR)/test_parser.c
 
 
-# 生成的文件
+# Generated files
 LEX_OUT = $(BUILD_DIR)/lexer.c
 YACC_OUT = $(BUILD_DIR)/parser.c
 YACC_HDR = $(BUILD_DIR)/parser.h
 
-# 对象文件
+# Object files
 OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES)) \
           $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o
 
-# 可执行文件
+# Executables
 TARGET = $(BIN_DIR)/whiled
 TOOLS = $(BIN_DIR)/ast_pretty
+TEST_LEXER_BIN = $(BIN_DIR)/test_lexer
+TEST_PARSER_BIN = $(BIN_DIR)/test_parser
 
-.PHONY: all clean directories
+.PHONY: all clean directories help test
 
-all: directories $(TARGET) $(TOOLS) $(BIN_DIR)/test_parser
+all: directories $(TARGET) $(TOOLS)
 
 directories:
 	@mkdir -p $(BIN_DIR) $(OBJ_DIR)
@@ -65,14 +71,25 @@ $(YACC_OUT) $(YACC_HDR): $(SRC_DIR)/parser.y
 	@mkdir -p $(BUILD_DIR)
 	$(YACC) $(YACC_FLAGS) -o $(YACC_OUT) $<
 
-$(BIN_DIR)/test_parser: $(OBJ_DIR)/test_parser.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o
+# Test targets
+test: $(TEST_LEXER_BIN) $(TEST_PARSER_BIN)
+
+$(TEST_LEXER_BIN): $(TEST_DIR)/test_lexer.c $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
+
+$(TEST_PARSER_BIN): $(TEST_DIR)/test_parser.c $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/util.o
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
 clean:
 	rm -rf $(BUILD_DIR)
 
 help:
-	@echo "可用命令:"
-	@echo "  make          - 构建项目"
-	@echo "  make clean    - 删除构建产物"
-	@echo "  make help     - 显示此帮助信息"
+	@echo "Available targets:"
+	@echo "  make            - Build main project (whiled and ast_pretty)"
+	@echo "  make test       - Build unit tests (test_lexer and test_parser)"
+	@echo "  make clean      - Remove all build artifacts"
+	@echo "  make help       - Show this help message"
+	@echo ""
+	@echo "Run tests:"
+	@echo "  ./build/bin/test_lexer [file.wd]"
+	@echo "  ./build/bin/test_parser [file.wd]"

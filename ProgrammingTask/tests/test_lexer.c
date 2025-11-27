@@ -1,6 +1,6 @@
 #include "ast.h"
 #include "type.h"
-#include "../build/parser.h"
+#include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 
