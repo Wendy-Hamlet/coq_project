@@ -81,29 +81,34 @@
 ### 方法一：使用 Makefile（快速开发）
 
 ```bash
-# 在 ProgrammingTask 目录中执行
+# In ProgrammingTask directory
 
-# 构建项目
+# Build main project
 make
 
-# 清理构建产物
+# Build unit tests
+make test
+
+# Clean all build artifacts
 make clean
 
-# 显示帮助
+# Show help
 make help
 ```
 
-**输出位置**：`build/bin/whiled` 和 `build/bin/ast_pretty`
+**Output locations**:
+- Main: `build/bin/whiled` and `build/bin/ast_pretty`
+- Tests: `build/bin/test_lexer` and `build/bin/test_parser`
 
 ### 方法二：从根目录使用 Makefile
 
 ```bash
-# 在项目根目录执行
+# In project root directory
 
-# 构建 ProgrammingTask
+# Build ProgrammingTask
 make programming-task
 
-# 清理 ProgrammingTask
+# Clean ProgrammingTask
 make clean
 ```
 
@@ -143,7 +148,11 @@ cmake --build .
 
 **生成命令**：
 ```bash
+# On Linux/macOS
 flex -o build/lexer.c src/lexer.l
+
+# On Windows
+win_flex -o build/lexer.c src/lexer.l
 ```
 
 **输出文件**：
@@ -169,7 +178,11 @@ flex -o build/lexer.c src/lexer.l
 
 **生成命令**：
 ```bash
+# On Linux/macOS
 bison -d -o build/parser.c src/parser.y
+
+# On Windows
+win_bison -d -o build/parser.c src/parser.y
 ```
 
 **输出文件**：
@@ -182,21 +195,37 @@ bison -d -o build/parser.c src/parser.y
 
 ### 完整编译流程
 
+**On Linux/macOS**:
 ```bash
-# 步骤 1: 使用 Flex 生成词法分析器
+# Step 1: Generate lexer using Flex
 flex -o build/lexer.c src/lexer.l
 
-# 步骤 2: 使用 Bison 生成语法分析器
+# Step 2: Generate parser using Bison
 bison -d -o build/parser.c src/parser.y
 
-# 步骤 3: 编译所有 C 源文件（包括生成的）
+# Step 3: Compile all C source files (including generated ones)
 gcc -std=c99 -Wall -Iinclude -Ibuild \
     -o build/bin/whiled \
     build/lexer.c build/parser.c \
     src/main.c src/driver.c src/ast.c src/type.c \
     src/symtab.c src/analyze.c src/ast_printer.c src/util.c
 
-# 或使用 Makefile（自动化）
+# Or use Makefile (automated)
+make
+```
+
+**On Windows**:
+```bash
+# Step 1: Generate lexer using win_flex
+win_flex -o build/lexer.c src/lexer.l
+
+# Step 2: Generate parser using win_bison
+win_bison -d -o build/parser.c src/parser.y
+
+# Step 3: Compile (same as Linux/macOS)
+gcc -std=c99 -Wall -Iinclude -Ibuild ...
+
+# Or use Makefile (Makefile handles platform differences automatically)
 make
 ```
 
@@ -242,19 +271,32 @@ cmake --build .  # 自动调用 flex 和 bison，然后编译
 ### 编译和运行编译器
 
 ```bash
-# 分析一个 WhileD 程序文件
+# Analyze a WhileD program file
 ./build/bin/whiled examples/simple_decl.wd
 
-# 使用 AST 打印工具（用于调试）
+# Use AST printing tool (for debugging)
 ./build/bin/ast_pretty examples/simple_decl.wd
 ```
 
-### 运行测试
+### 运行单元测试
+
+```bash
+# Build test programs
+make test
+
+# Run lexer tests
+./build/bin/test_lexer examples/simple_decl.wd
+
+# Run parser tests
+./build/bin/test_parser examples/simple_decl.wd
+```
+
+### 运行集成测试
 
 ```bash
 cd tests
-bash run_tests.sh              # 运行所有测试
-bash run_tests.sh --verbose    # 显示详细输出
+bash run_tests.sh              # Run all integration tests
+bash run_tests.sh --verbose    # Show detailed output
 ```
 
 ### 示例程序
