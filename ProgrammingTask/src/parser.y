@@ -23,10 +23,8 @@ Stmt *parse_result = NULL;
 }
 
 /* Terminal tokens */
-/* token LONGLONG added */
 %token SKIP IF THEN ELSE FI WHILE DO OD
-%token SHORT INT LONG
-%token LONGLONG
+%token SHORT INT LONG LONGLONG
 %token ASSIGN SEMI LPAREN RPAREN
 %token PLUS MINUS STAR SLASH MOD
 %token EQ NEQ LT GT LE GE

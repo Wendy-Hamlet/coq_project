@@ -28,8 +28,8 @@
 
 "short"               { return SHORT; }
 "int"                 { return INT; }
-"long"[ \t\r\n]+"long"  { return LONGLONG; }
 "long"                { return LONG; }
+"long"[ \t\r\n]+"long"  { return LONGLONG; }
 
 ":="                  { return ASSIGN; }
 ";"                   { return SEMI; }
