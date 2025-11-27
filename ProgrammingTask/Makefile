@@ -18,7 +18,9 @@ OBJ_DIR = $(BUILD_DIR)/obj
 # 源文件
 SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/driver.c $(SRC_DIR)/ast.c \
           $(SRC_DIR)/type.c $(SRC_DIR)/symtab.c $(SRC_DIR)/analyze.c \
-          $(SRC_DIR)/ast_printer.c $(SRC_DIR)/util.c
+          $(SRC_DIR)/ast_printer.c $(SRC_DIR)/util.c \
+		  $(SRC_DIR)/test_parser.c
+
 
 # 生成的文件
 LEX_OUT = $(BUILD_DIR)/lexer.c
@@ -35,7 +37,7 @@ TOOLS = $(BIN_DIR)/ast_pretty
 
 .PHONY: all clean directories
 
-all: directories $(TARGET) $(TOOLS)
+all: directories $(TARGET) $(TOOLS) $(BIN_DIR)/test_parser
 
 directories:
 	@mkdir -p $(BIN_DIR) $(OBJ_DIR)
@@ -46,13 +48,13 @@ $(TARGET): $(OBJECTS)
 $(TOOLS): tools/ast_pretty.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -o $@ $<
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(YACC_HDR)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(YACC_HDR) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
 
-$(OBJ_DIR)/lexer.o: $(LEX_OUT)
+$(OBJ_DIR)/lexer.o: $(LEX_OUT) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
 
-$(OBJ_DIR)/parser.o: $(YACC_OUT)
+$(OBJ_DIR)/parser.o: $(YACC_OUT) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
 
 $(LEX_OUT): $(SRC_DIR)/lexer.l
@@ -62,6 +64,9 @@ $(LEX_OUT): $(SRC_DIR)/lexer.l
 $(YACC_OUT) $(YACC_HDR): $(SRC_DIR)/parser.y
 	@mkdir -p $(BUILD_DIR)
 	$(YACC) $(YACC_FLAGS) -o $(YACC_OUT) $<
+
+$(BIN_DIR)/test_parser: $(OBJ_DIR)/test_parser.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
 clean:
 	rm -rf $(BUILD_DIR)

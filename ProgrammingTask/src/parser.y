@@ -23,8 +23,10 @@ Stmt *parse_result = NULL;
 }
 
 /* Terminal tokens */
+/* token LONGLONG added */
 %token SKIP IF THEN ELSE FI WHILE DO OD
 %token SHORT INT LONG
+%token LONGLONG
 %token ASSIGN SEMI LPAREN RPAREN
 %token PLUS MINUS STAR SLASH MOD
 %token EQ NEQ LT GT LE GE
@@ -78,11 +80,12 @@ type:
     | type STAR             { $$ = type_make_ptr($1); }
     ;
 
+/* LONG LONG changed to LONGLONG */
 basetype:
     SHORT                   { $$ = type_make_basic(TYPE_SHORT); }
     | INT                   { $$ = type_make_basic(TYPE_INT); }
     | LONG                  { $$ = type_make_basic(TYPE_LONG); }
-    | LONG LONG             { $$ = type_make_basic(TYPE_LLONG); }
+    | LONGLONG              { $$ = type_make_basic(TYPE_LLONG); }
     ;
 
 /* Expression grammar */

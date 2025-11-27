@@ -1,3 +1,4 @@
+/* bison会自动生成parser.h文件，所以这里不再需要这个文件 */
 #ifndef PARSER_H
 #define PARSER_H
 

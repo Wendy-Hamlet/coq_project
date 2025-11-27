@@ -28,6 +28,7 @@
 
 "short"               { return SHORT; }
 "int"                 { return INT; }
+"long"[ \t\r\n]+"long"  { return LONGLONG; }
 "long"                { return LONG; }
 
 ":="                  { return ASSIGN; }
