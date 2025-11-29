@@ -9,8 +9,24 @@ extern char *yytext;
 extern int yylineno;
 extern FILE *yyin;
 
-/* Define yylval here since we are not linking parser.c */
-YYSTYPE yylval;
+/* Minimal stubs to satisfy linker when parser.o calls AST/type helpers. */
+Expr *ast_int_literal(long long v) { (void)v; return NULL; }
+Expr *ast_var(const char *name) { (void)name; return NULL; }
+Expr *ast_binop(BinOp op, Expr *l, Expr *r) { (void)op; (void)l; (void)r; return NULL; }
+Expr *ast_unop(Expr *e) { (void)e; return NULL; }
+Expr *ast_addr(Expr *e) { (void)e; return NULL; }
+Expr *ast_deref(Expr *e) { (void)e; return NULL; }
+Expr *ast_cast(Type *t, Expr *e) { (void)t; (void)e; return NULL; }
+
+Stmt *ast_skip() { return NULL; }
+Stmt *ast_seq(Stmt *s1, Stmt *s2) { (void)s1; (void)s2; return NULL; }
+Stmt *ast_assign(const char *lhs, Expr *rhs) { (void)lhs; (void)rhs; return NULL; }
+Stmt *ast_decl(Type *t, const char *var, Stmt *body) { (void)t; (void)var; (void)body; return NULL; }
+Stmt *ast_if(Expr *c, Stmt *t, Stmt *e) { (void)c; (void)t; (void)e; return NULL; }
+Stmt *ast_while(Expr *c, Stmt *body) { (void)c; (void)body; return NULL; }
+
+Type *type_make_basic(TypeKind k) { (void)k; return NULL; }
+Type *type_make_ptr(Type *base) { (void)base; return NULL; }
 
 const char *token_name(int token) {
   switch (token) {

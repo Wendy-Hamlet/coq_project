@@ -1,7 +1,8 @@
 # Makefile for building typed WhileD compiler (ProgrammingTask)
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -std=c99
+# Add debug info for local debugging sessions
+CFLAGS = -g -O0 -Wall -Wextra -Wpedantic -std=c99
 LEX = flex
 YACC = bison
 YACC_FLAGS = -d
@@ -74,7 +75,7 @@ $(YACC_OUT) $(YACC_HDR): $(SRC_DIR)/parser.y
 # Test targets
 test: $(TEST_LEXER_BIN) $(TEST_PARSER_BIN)
 
-$(TEST_LEXER_BIN): $(TEST_DIR)/test_lexer.c $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o
+$(TEST_LEXER_BIN): $(TEST_DIR)/test_lexer.c $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o $(OBJ_DIR)/util.o
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
 $(TEST_PARSER_BIN): $(TEST_DIR)/test_parser.c $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/util.o

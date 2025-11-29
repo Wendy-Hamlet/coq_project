@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "util.h"
 
 /* 辅助函数：分配内存 */
 static Expr *alloc_expr(ExprKind kind) {
@@ -29,7 +30,7 @@ Expr *ast_int_literal(long long v) {
 
 Expr *ast_var(const char *name) {
     Expr *e = alloc_expr(AST_VAR);
-    e->v.var_name = strdup(name);
+    e->v.var_name = xstrdup(name);
     return e;
 }
 
@@ -80,7 +81,7 @@ Stmt *ast_seq(Stmt *s1, Stmt *s2) {
 
 Stmt *ast_assign(const char *lhs, Expr *rhs) {
     Stmt *s = alloc_stmt(STMT_ASSIGN);
-    s->v.assign.lhs = strdup(lhs);
+    s->v.assign.lhs = xstrdup(lhs);
     s->v.assign.rhs = rhs;
     return s;
 }
@@ -88,7 +89,7 @@ Stmt *ast_assign(const char *lhs, Expr *rhs) {
 Stmt *ast_decl(Type *t, const char *var, Stmt *body) {
     Stmt *s = alloc_stmt(STMT_DECL);
     s->v.decl.decl_type = t;
-    s->v.decl.var_name = strdup(var);
+    s->v.decl.var_name = xstrdup(var);
     s->v.decl.body = body;
     return s;
 }

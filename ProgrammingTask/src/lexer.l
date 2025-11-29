@@ -4,6 +4,7 @@
 #include "type.h"
 #include "parser.h"
 #include <string.h>
+#include "util.h"
 
 /* Update line number on newlines */
 %}
@@ -57,7 +58,7 @@
                       }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-                        yylval.str_val = strdup(yytext); 
+                        yylval.str_val = xstrdup(yytext); 
                         return IDENT; 
                       }
 
