@@ -1,0 +1,8 @@
+int x; 
+int y; 
+if 1 then 
+    x := 10; 
+    y := x + 5
+else 
+    skip 
+fi

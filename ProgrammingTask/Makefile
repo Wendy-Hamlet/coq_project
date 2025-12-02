@@ -52,8 +52,15 @@ directories:
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
-$(TOOLS): tools/ast_pretty.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -o $@ $<
+# --- 修复部分开始 ---
+# 定义 ast_pretty 需要的依赖（排除 main.o, driver.o, analyze.o 以免冲突或多余）
+AST_PRETTY_OBJS = $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/symtab.o \
+                  $(OBJ_DIR)/util.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o
+
+# 修改规则：链接 ast_pretty.c 和它依赖的 .o 文件
+$(TOOLS): tools/ast_pretty.c $(AST_PRETTY_OBJS)
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
+# --- 修复部分结束 ---
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(YACC_HDR) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
