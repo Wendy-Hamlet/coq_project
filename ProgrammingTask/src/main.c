@@ -10,7 +10,6 @@ extern FILE *yyin;
 extern Stmt *parse_result; 
 
 int main(int argc, char **argv) {
-    // 1. 处理输入文件
     if (argc > 1) {
         FILE *f = fopen(argv[1], "r");
         if (!f) {
