@@ -68,10 +68,6 @@ command:
                             { $$ = ast_while($2, $4); }
     ;
 
-stmt:
-    command                 { $$ = $1; }
-    ;
-
 /* Type grammar */
 type:
     basetype                { $$ = $1; }
