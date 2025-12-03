@@ -11,7 +11,7 @@ make
 
 2. 接着对想要分析的测试文件进行测试即可
 ```bash
-./build/bin/whiled.exe examples/test_{板块名}.wd
+./build/bin/whiled examples/test_{板块名}.wd
 ```
 
 便会得到输出，如果无错误输出成功的语句，有误则会针对错误行数进行报错。
