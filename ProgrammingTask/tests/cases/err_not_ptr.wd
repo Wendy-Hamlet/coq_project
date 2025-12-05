@@ -1,0 +1,8 @@
+# Error test case: Logical NOT on pointer
+# Expected: Type error - logical NOT requires integer operand
+
+int x;
+int* p;
+p = &x;
+int result;
+result = !p

@@ -2,6 +2,6 @@
 # Expected: Type error - cannot dereference non-pointer
 
 int x;
-x := 10;
+x = 10;
 int y;
-y := *x
+y = *x

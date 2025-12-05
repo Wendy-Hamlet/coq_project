@@ -1,4 +1,8 @@
+# Type error test
+# Demonstrates type mismatch error
+
+int x;
 int* p;
-int* q;
-int r;
-r := p + q
+
+x = 10;
+p = x

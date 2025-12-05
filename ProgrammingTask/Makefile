@@ -1,7 +1,6 @@
-# Makefile for building typed WhileD compiler (ProgrammingTask)
+# Makefile for typed WhileD compiler
 
 CC = gcc
-# Add debug info for local debugging sessions
 CFLAGS = -g -O0 -Wall -Wextra -Wpedantic -std=c99
 LEX = flex
 YACC = bison
@@ -52,22 +51,19 @@ directories:
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
-# --- 修复部分开始 ---
-# 定义 ast_pretty 需要的依赖（排除 main.o, driver.o, analyze.o 以免冲突或多余）
+# ast_pretty tool dependencies
 AST_PRETTY_OBJS = $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/symtab.o \
                   $(OBJ_DIR)/util.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o \
                   $(OBJ_DIR)/ast_printer.o
 
-# 修改规则：链接 ast_pretty.c 和它依赖的 .o 文件
 $(TOOLS): tools/ast_pretty.c $(AST_PRETTY_OBJS)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
-# --- 修复部分结束 ---
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(YACC_HDR) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
 
 $(OBJ_DIR)/lexer.o: $(LEX_OUT) | directories
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
+	$(CC) $(CFLAGS) -D_POSIX_C_SOURCE=200809L -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<
 
 $(OBJ_DIR)/parser.o: $(YACC_OUT) | directories
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -c -o $@ $<

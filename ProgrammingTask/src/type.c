@@ -66,6 +66,7 @@ Type *type_common(Type *a, Type *b) {
 		return type_make_basic(ra >= rb ? a->kind : b->kind);
 	}
 	if (type_is_pointer(a) && type_is_pointer(b)) {
+		if (!a->base || !b->base) return type_make_basic(TYPE_ERROR);
 		if (type_equal(a->base, b->base)) return type_make_ptr(a->base);
 		return type_make_basic(TYPE_ERROR);
 	}

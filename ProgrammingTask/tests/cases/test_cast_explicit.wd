@@ -2,10 +2,10 @@
 # Tests: (type) expression syntax
 
 short a;
-a := 10;
+a = 10;
 int b;
-b := (int) a;
+b = (int) a;
 long c;
-c := (long) b;
+c = (long) b;
 long long d;
-d := (long long) c
+d = (long long) c

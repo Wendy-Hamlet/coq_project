@@ -2,10 +2,10 @@
 # Tests: int**, int***
 
 int x;
-x := 10;
+x = 10;
 int* p;
-p := &x;
+p = &x;
 int** pp;
-pp := &p;
+pp = &p;
 int val;
-val := **pp
+val = **pp

@@ -34,6 +34,10 @@ static const char *binop_to_str(BinOp op) {
     return "<=";
   case BIN_GE:
     return ">=";
+  case BIN_AND:
+    return "&&";
+  case BIN_OR:
+    return "||";
   default:
     return "?";
   }
@@ -67,6 +71,12 @@ void ast_print_expr(Expr *e, int indent) {
 
   case AST_UNOP:
     printf("(-");
+    ast_print_expr(e->v.unop.e, 0);
+    printf(")");
+    break;
+
+  case AST_NOT:
+    printf("(!");
     ast_print_expr(e->v.unop.e, 0);
     printf(")");
     break;
@@ -113,8 +123,17 @@ void ast_print_stmt(Stmt *s, int indent) {
 
   case STMT_ASSIGN:
     print_indent(indent);
-    printf("%s := ", s->v.assign.lhs);
+    printf("%s = ", s->v.assign.lhs);
     ast_print_expr(s->v.assign.rhs, 0);
+    printf(";\n");
+    break;
+
+  case STMT_ASSIGN_DEREF:
+    print_indent(indent);
+    printf("*");
+    ast_print_expr(s->v.deref_assign.lhs, 0);
+    printf(" = ");
+    ast_print_expr(s->v.deref_assign.rhs, 0);
     printf(";\n");
     break;
 
@@ -130,25 +149,25 @@ void ast_print_stmt(Stmt *s, int indent) {
 
   case STMT_IF:
     print_indent(indent);
-    printf("if ");
+    printf("if (");
     ast_print_expr(s->v.ifstmt.cond, 0);
-    printf(" then\n");
+    printf(") then {\n");
     ast_print_stmt(s->v.ifstmt.then_branch, indent + 1);
     print_indent(indent);
-    printf("else\n");
+    printf("} else {\n");
     ast_print_stmt(s->v.ifstmt.else_branch, indent + 1);
     print_indent(indent);
-    printf("fi\n");
+    printf("}\n");
     break;
 
   case STMT_WHILE:
     print_indent(indent);
-    printf("while ");
+    printf("while (");
     ast_print_expr(s->v.whilestmt.cond, 0);
-    printf(" do\n");
+    printf(") do {\n");
     ast_print_stmt(s->v.whilestmt.body, indent + 1);
     print_indent(indent);
-    printf("od\n");
+    printf("}\n");
     break;
   }
 }

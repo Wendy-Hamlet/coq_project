@@ -1,0 +1,6 @@
+# Error test case: Type mismatch in assignment
+# Expected: Type error - cannot assign int** to int*
+
+int x;
+int** pp;
+pp = &x

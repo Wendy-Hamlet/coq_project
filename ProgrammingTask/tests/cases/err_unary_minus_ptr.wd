@@ -3,6 +3,6 @@
 
 int x;
 int* p;
-p := &x;
+p = &x;
 int* q;
-q := -p
+q = -p

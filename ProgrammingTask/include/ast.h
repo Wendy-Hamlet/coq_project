@@ -8,7 +8,8 @@ typedef enum {
     AST_INT_LITERAL,
     AST_VAR,
     AST_BINOP,
-    AST_UNOP,      // unary minus
+    AST_UNOP,      // unary minus (-)
+    AST_NOT,       // logical NOT (!)
     AST_CAST,
     AST_ADDR,      // address-of (&)
     AST_DEREF      // dereference (*)
@@ -19,13 +20,15 @@ typedef enum {
     BIN_SUB,
     BIN_MUL,
     BIN_DIV,
-    BIN_MOD,    // modulo operator
+    BIN_MOD,
     BIN_EQ,
     BIN_NEQ,
     BIN_LT,
     BIN_GT,
     BIN_LE,
-    BIN_GE
+    BIN_GE,
+    BIN_AND,    // logical AND (&&)
+    BIN_OR      // logical OR (||)
 } BinOp;
 
 /* Forward declarations */
@@ -69,7 +72,8 @@ typedef struct Expr {
 typedef enum {
     STMT_SKIP,
     STMT_SEQ,
-    STMT_ASSIGN,
+    STMT_ASSIGN,        // x = e
+    STMT_ASSIGN_DEREF,  // *e1 = e2
     STMT_DECL,
     STMT_IF,
     STMT_WHILE
@@ -88,6 +92,12 @@ typedef struct Stmt {
             const char *lhs;
             Expr *rhs;
         } assign;
+
+        /* *e1 = e2 (deref assignment) */
+        struct {
+            Expr *lhs;
+            Expr *rhs;
+        } deref_assign;
 
         /* type x; body */
         struct {
@@ -115,7 +125,8 @@ typedef struct Stmt {
 Expr *ast_int_literal(long long v);
 Expr *ast_var(const char *name);
 Expr *ast_binop(BinOp op, Expr *l, Expr *r);
-Expr *ast_unop(Expr *e);                     // unary minus
+Expr *ast_unop(Expr *e);                     // unary minus (-)
+Expr *ast_not(Expr *e);                      // logical NOT (!)
 Expr *ast_addr(Expr *e);                     // address-of (&)
 Expr *ast_deref(Expr *e);                    // dereference (*)
 Expr *ast_cast(Type *t, Expr *e);
@@ -123,6 +134,7 @@ Expr *ast_cast(Type *t, Expr *e);
 Stmt *ast_skip();
 Stmt *ast_seq(Stmt *s1, Stmt *s2);
 Stmt *ast_assign(const char *lhs, Expr *rhs);
+Stmt *ast_assign_deref(Expr *lhs, Expr *rhs); // *e1 = e2
 Stmt *ast_decl(Type *t, const char *var, Stmt *body);
 Stmt *ast_if(Expr *c, Stmt *t, Stmt *e);
 Stmt *ast_while(Expr *c, Stmt *body);

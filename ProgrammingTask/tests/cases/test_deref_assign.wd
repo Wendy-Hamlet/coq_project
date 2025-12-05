@@ -1,0 +1,8 @@
+# Test case: Deref assignment (*e1 = e2)
+# Tests: CAsgnDeref
+
+int x;
+x = 0;
+int* p;
+p = &x;
+*p = 42

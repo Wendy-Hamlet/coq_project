@@ -1,16 +1,17 @@
 %{
 /* Lexer for typed WhileD language */
+#include <stdio.h>
 #include "ast.h"
 #include "type.h"
 #include "parser.h"
 #include <string.h>
 #include "util.h"
-
-/* Update line number on newlines */
 %}
 
 %option noyywrap
 %option yylineno
+%option noinput
+%option nounput
 
 %%
 
@@ -32,7 +33,7 @@
 "long"                { return LONG; }
 "long"[ \t\r\n]+"long"  { return LONGLONG; }
 
-":="                  { return ASSIGN; }
+"="                   { return ASSIGN; }
 ";"                   { return SEMI; }
 "("                   { return LPAREN; }
 ")"                   { return RPAREN; }
@@ -51,6 +52,11 @@
 ">="                  { return GE; }
 
 "&"                   { return AMPERSAND; }
+"&&"                  { return AND; }
+"||"                  { return OR; }
+"!"                   { return NOT; }
+"{"                   { return LBRACE; }
+"}"                   { return RBRACE; }
 
 [0-9]+                { 
                         yylval.int_val = atoll(yytext); 

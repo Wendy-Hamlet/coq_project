@@ -2,8 +2,8 @@
 # Tests: pointer declaration, address-of (&), dereference (*)
 
 int x;
-x := 42;
+x = 42;
 int* p;
-p := &x;
+p = &x;
 int y;
-y := *p
+y = *p

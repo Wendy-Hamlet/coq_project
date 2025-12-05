@@ -25,25 +25,27 @@ Stmt *parse_result = NULL;
 /* Terminal tokens */
 %token SKIP IF THEN ELSE FI WHILE DO OD
 %token SHORT INT LONG LONGLONG
-%token ASSIGN SEMI LPAREN RPAREN
+%token ASSIGN SEMI LPAREN RPAREN LBRACE RBRACE
 %token PLUS MINUS STAR SLASH MOD
 %token EQ NEQ LT GT LE GE
-%token AMPERSAND
+%token AND OR NOT AMPERSAND
 %token <int_val> INT_LITERAL
 %token <str_val> IDENT
 
 /* Non-terminals with types */
 %type <type_val> type basetype
-%type <expr_val> expr term factor
+%type <expr_val> expr logic_or logic_and comparison additive term factor unary
 %type <stmt_val> program commands command
 
 /* Operator precedence and associativity */
+%left OR
+%left AND
 %left EQ NEQ
 %left LT GT LE GE
 %left PLUS MINUS
 %left STAR SLASH MOD
-%right CAST      /* for type casting (Type) expr */
-%right UNARY     /* for unary minus and address/deref */
+%right CAST
+%right UNARY
 
 %%
 
@@ -60,12 +62,14 @@ commands:
 command:
     SKIP                    { $$ = ast_skip(); }
     | IDENT ASSIGN expr     { $$ = ast_assign($1, $3); }
+    | STAR unary ASSIGN expr
+                            { $$ = ast_assign_deref($2, $4); }
     | type IDENT SEMI command
                             { $$ = ast_decl($1, $2, $4); }
-    | IF expr THEN commands ELSE commands FI
-                            { $$ = ast_if($2, $4, $6); }
-    | WHILE expr DO commands OD
-                            { $$ = ast_while($2, $4); }
+    | IF LPAREN expr RPAREN THEN LBRACE commands RBRACE ELSE LBRACE commands RBRACE
+                            { $$ = ast_if($3, $7, $11); }
+    | WHILE LPAREN expr RPAREN DO LBRACE commands RBRACE
+                            { $$ = ast_while($3, $7); }
     ;
 
 /* Type grammar */
@@ -82,38 +86,63 @@ basetype:
     | LONGLONG              { $$ = type_make_basic(TYPE_LLONG); }
     ;
 
-/* Expression grammar */
+/* Expression grammar with proper precedence */
 expr:
+    logic_or                { $$ = $1; }
+    ;
+
+logic_or:
+    logic_and               { $$ = $1; }
+    | logic_or OR logic_and { $$ = ast_binop(BIN_OR, $1, $3); }
+    ;
+
+logic_and:
+    comparison              { $$ = $1; }
+    | logic_and AND comparison
+                            { $$ = ast_binop(BIN_AND, $1, $3); }
+    ;
+
+comparison:
+    additive                { $$ = $1; }
+    | comparison EQ additive  { $$ = ast_binop(BIN_EQ, $1, $3); }
+    | comparison NEQ additive { $$ = ast_binop(BIN_NEQ, $1, $3); }
+    | comparison LT additive  { $$ = ast_binop(BIN_LT, $1, $3); }
+    | comparison GT additive  { $$ = ast_binop(BIN_GT, $1, $3); }
+    | comparison LE additive  { $$ = ast_binop(BIN_LE, $1, $3); }
+    | comparison GE additive  { $$ = ast_binop(BIN_GE, $1, $3); }
+    ;
+
+additive:
     term                    { $$ = $1; }
-    | expr PLUS term        { $$ = ast_binop(BIN_ADD, $1, $3); }
-    | expr MINUS term       { $$ = ast_binop(BIN_SUB, $1, $3); }
-    | expr EQ term          { $$ = ast_binop(BIN_EQ, $1, $3); }
-    | expr NEQ term         { $$ = ast_binop(BIN_NEQ, $1, $3); }
-    | expr LT term          { $$ = ast_binop(BIN_LT, $1, $3); }
-    | expr GT term          { $$ = ast_binop(BIN_GT, $1, $3); }
-    | expr LE term          { $$ = ast_binop(BIN_LE, $1, $3); }
-    | expr GE term          { $$ = ast_binop(BIN_GE, $1, $3); }
+    | additive PLUS term    { $$ = ast_binop(BIN_ADD, $1, $3); }
+    | additive MINUS term   { $$ = ast_binop(BIN_SUB, $1, $3); }
     ;
 
 term:
+    unary                   { $$ = $1; }
+    | term STAR unary       { $$ = ast_binop(BIN_MUL, $1, $3); }
+    | term SLASH unary      { $$ = ast_binop(BIN_DIV, $1, $3); }
+    | term MOD unary        { $$ = ast_binop(BIN_MOD, $1, $3); }
+    ;
+
+unary:
     factor                  { $$ = $1; }
-    | term STAR factor      { $$ = ast_binop(BIN_MUL, $1, $3); }
-    | term SLASH factor     { $$ = ast_binop(BIN_DIV, $1, $3); }
-    | term MOD factor       { $$ = ast_binop(BIN_MOD, $1, $3); }
+    | MINUS unary %prec UNARY
+                            { $$ = ast_unop($2); }
+    | NOT unary %prec UNARY
+                            { $$ = ast_not($2); }
+    | STAR unary %prec UNARY
+                            { $$ = ast_deref($2); }
+    | AMPERSAND unary %prec UNARY
+                            { $$ = ast_addr($2); }
     ;
 
 factor:
     INT_LITERAL             { $$ = ast_int_literal($1); }
     | IDENT                 { $$ = ast_var($1); }
     | LPAREN expr RPAREN    { $$ = $2; }
-    | LPAREN type RPAREN factor %prec CAST
+    | LPAREN type RPAREN unary %prec CAST
                             { $$ = ast_cast($2, $4); }
-    | MINUS factor %prec UNARY
-                            { $$ = ast_unop($2); }
-    | STAR factor %prec UNARY
-                            { $$ = ast_deref($2); }
-    | AMPERSAND IDENT %prec UNARY
-                            { $$ = ast_addr(ast_var($2)); }
     ;
 
 %%

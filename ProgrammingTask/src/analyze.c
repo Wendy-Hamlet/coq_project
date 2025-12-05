@@ -118,6 +118,14 @@ static void check_expr(Expr *e) {
                         }
                     }
                     break;
+
+                case BIN_AND: case BIN_OR:
+                    /* Logical operators: both operands must be integers */
+                    if (!type_is_integer(l) || !type_is_integer(r)) {
+                        error("Logical operators require integer operands");
+                    }
+                    e->expr_type = type_make_basic(TYPE_INT);
+                    break;
             }
             break;
         }
@@ -128,6 +136,14 @@ static void check_expr(Expr *e) {
                 error("Unary '-' requires integer operand");
             }
             e->expr_type = e->v.unop.e->expr_type;
+            break;
+
+        case AST_NOT:
+            check_expr(e->v.unop.e);
+            if (!type_is_integer(e->v.unop.e->expr_type)) {
+                error("Logical NOT '!' requires integer operand");
+            }
+            e->expr_type = type_make_basic(TYPE_INT);
             break;
 
         case AST_ADDR: // &x
@@ -142,6 +158,9 @@ static void check_expr(Expr *e) {
             check_expr(e->v.unop.e);
             if (!type_is_pointer(e->v.unop.e->expr_type)) {
                 error("Cannot dereference non-pointer type");
+            }
+            if (!e->v.unop.e->expr_type->base) {
+                error("Pointer has no base type (internal error)");
             }
             e->expr_type = e->v.unop.e->expr_type->base;
             break;
@@ -178,6 +197,26 @@ static void check_stmt(Stmt *s) {
             if (!type_can_convert(s->v.assign.rhs->expr_type, sym->type)) {
                 fprintf(stderr, "Error: Cannot assign type to variable '%s'\n", s->v.assign.lhs);
                 error("Type mismatch in assignment");
+            }
+            break;
+        }
+
+        case STMT_ASSIGN_DEREF: {
+            /* *e1 = e2 */
+            check_expr(s->v.deref_assign.lhs);
+            check_expr(s->v.deref_assign.rhs);
+            
+            Type *lhs_type = s->v.deref_assign.lhs->expr_type;
+            if (!type_is_pointer(lhs_type)) {
+                error("Left side of deref assignment must be a pointer");
+            }
+            
+            Type *target_type = lhs_type->base;
+            if (!target_type) {
+                error("Pointer has no base type (internal error)");
+            }
+            if (!type_can_convert(s->v.deref_assign.rhs->expr_type, target_type)) {
+                error("Type mismatch in deref assignment");
             }
             break;
         }

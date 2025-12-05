@@ -54,6 +54,12 @@ Expr *ast_unop(Expr *sub) {
   return e;
 }
 
+Expr *ast_not(Expr *sub) {
+  Expr *e = alloc_expr(AST_NOT);
+  e->v.unop.e = sub;
+  return e;
+}
+
 Expr *ast_addr(Expr *sub) {
   Expr *e = alloc_expr(AST_ADDR);
   e->v.unop.e = sub;
@@ -90,6 +96,13 @@ Stmt *ast_assign(const char *lhs, Expr *rhs) {
   return s;
 }
 
+Stmt *ast_assign_deref(Expr *lhs, Expr *rhs) {
+  Stmt *s = alloc_stmt(STMT_ASSIGN_DEREF);
+  s->v.deref_assign.lhs = lhs;
+  s->v.deref_assign.rhs = rhs;
+  return s;
+}
+
 Stmt *ast_decl(Type *t, const char *var, Stmt *body) {
   Stmt *s = alloc_stmt(STMT_DECL);
   s->v.decl.decl_type = t;
@@ -116,5 +129,5 @@ Stmt *ast_while(Expr *c, Stmt *body) {
 /* AST printing utilities have been moved to ast_printer.c */
 
 /* Memory deallocation (optional, left empty for now) */
-void ast_free_expr(Expr *e) {}
-void ast_free_stmt(Stmt *s) {}
+void ast_free_expr(Expr *e) { (void)e; }
+void ast_free_stmt(Stmt *s) { (void)s; }

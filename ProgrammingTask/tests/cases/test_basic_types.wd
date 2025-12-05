@@ -2,12 +2,12 @@
 # Tests: short, int, long, long long types
 
 short a;
-a := 1;
+a = 1;
 int b;
-b := 100;
+b = 100;
 long c;
-c := 10000;
+c = 10000;
 long long d;
-d := 1000000;
+d = 1000000;
 int result;
-result := a + b + c + d
+result = a + b + c + d

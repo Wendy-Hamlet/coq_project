@@ -2,10 +2,10 @@
 # Tests: automatic promotion when mixing types
 
 short s;
-s := 1;
+s = 1;
 int i;
-i := 100;
+i = 100;
 long l;
-l := s + i;
+l = s + i;
 long long ll;
-ll := l + i + s
+ll = l + i + s

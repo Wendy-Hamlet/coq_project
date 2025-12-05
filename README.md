@@ -2,158 +2,72 @@
 
 ## 项目概述
 
-该项目包含以下主要任务：
+本项目为**程序语言与编译原理**课程的大作业，包含以下任务：
 
 - **ProgrammingTask** - 带类型 WhileD 语言的词法分析、语法分析和类型分析
-
-理论作业待添加。
 
 ## 目录结构
 
 ```
-coq_project/                    # Git 根目录
-├── CMakeLists.txt             # 主项目配置（管理所有子项目）
-├── Makefile                   # 根目录 Makefile（统一构建入口）
-├── .gitignore                 # Git 忽略规则
-├── README.md                  # 本文件：项目级说明与构建指南
+coq_project/
+├── README.md                  # 本文件
+├── Makefile                   # 构建配置
 ├── Projects.pdf               # 作业要求文档
 │
-├── ProgrammingTask/           # 第一个任务：WhileD 编译器
-│   ├── CMakeLists.txt         # 子项目配置
-│   ├── Makefile               # 任务级 Makefile
-│   ├── README.md              # 任务说明：具体功能、语言特性
-│   ├── docs/                  # 文档
-│   │   ├── language_spec.md   # 语言文法、类型规则
-│   │   ├── design_notes.md    # 设计决策、限制说明
-│   │   └── examples.md        # 使用示例和测试用例
-│   ├── examples/              # 示例程序
-│   ├── tests/                 # 测试用例
-│   ├── include/               # 头文件
-│   ├── src/                   # 源代码
-│   ├── tools/                 # 工具程序
-│   ├── build/                 # 构建输出
-│   └── scripts/               # 构建脚本
-│
-# 后续任务添加到这里...
+└── ProgrammingTask/           # 编程任务：WhileD 编译器
+    ├── README.md              # 任务说明
+    ├── Makefile               # 任务构建配置
+    ├── docs/                  # 文档
+    │   ├── language_spec.md   # 语言规范
+    │   └── design_notes.md    # 设计说明
+    ├── examples/              # 示例程序
+    ├── tests/                 # 测试用例
+    ├── include/               # 头文件
+    ├── src/                   # 源代码
+    ├── tools/                 # 工具程序
+    └── build/                 # 构建输出
 ```
 
 ## 构建与运行
 
 ### 依赖要求
 
-- **C99 编译器**：gcc、clang 或 MSVC
-- **Flex**：词法分析器生成器
-- **Bison**：语法分析器生成器
-- **CMake 3.10+**（如果使用 CMake）
-- **GNU Make**（如果使用 Makefile）
+- GCC（支持 C99）
+- Flex（词法分析器生成器）
+- Bison（语法分析器生成器）
+- GNU Make
 
-### 方法一：使用根目录 Makefile
-
-从项目根目录执行：
+### 编译
 
 ```bash
-# 构建所有任务
+# 在根目录构建
 make
 
-# 只构建 ProgrammingTask
-make programming-task
-
-# 清理所有构建产物
-make clean
-
-# 显示帮助信息
-make help
-```
-
-**输出位置**：
-```
-ProgrammingTask/build/bin/whiled         # 主程序
-ProgrammingTask/build/bin/ast_pretty     # 工具程序
-```
-
-### 方法二：使用 ProgrammingTask 中的 Makefile
-
-进入任务目录后执行：
-
-```bash
+# 或进入任务目录构建
 cd ProgrammingTask
-
-# 构建项目
 make
-
-# 清理产物
-make clean
-
-# 帮助
-make help
 ```
 
-### 方法三：使用 CMake
-
-从项目根目录执行：
+### 运行
 
 ```bash
-# 创建并进入构建目录
-mkdir build
-cd build
-
-# 配置项目
-cmake ..
-
-# 构建所有目标
-cmake --build .
-
-# 或在 Linux/macOS 上
-make -j4
-```
-
-**输出位置**：
-```
-build/bin/whiled         # 主程序
-build/bin/ast_pretty     # 工具程序
-```
-
-### 使用编译器
-
-```bash
-# 分析一个 WhileD 程序
+# 编译 WhileD 程序
 ./ProgrammingTask/build/bin/whiled ProgrammingTask/examples/simple_decl.wd
 
-# 使用 AST 打印工具
+# 查看 AST
 ./ProgrammingTask/build/bin/ast_pretty ProgrammingTask/examples/simple_decl.wd
 ```
 
-## 快速开始
-
-### 第一次完整构建
+### 测试
 
 ```bash
-# 1. 在根目录构建所有任务
-make
-
-# 2. 运行测试
-cd ProgrammingTask
-cd tests
+cd ProgrammingTask/tests
 bash run_tests.sh
-
-# 3. 尝试示例
-../build/bin/whiled ../examples/simple_decl.wd
 ```
 
-### 日常开发流程
+## 文档
 
-```bash
-# 修改代码后重新构建
-cd ProgrammingTask
-make
-
-# 清理旧文件
-make clean
-```
-
-## 文档指引
-
-详见 `ProgrammingTask/` 中的文档：
-- [`docs/language_spec.md`](ProgrammingTask/docs/language_spec.md) - 语言文法和类型规则
-- [`docs/design_notes.md`](ProgrammingTask/docs/design_notes.md) - 设计决策和限制
-- [`docs/examples.md`](ProgrammingTask/docs/examples.md) - 使用示例和测试用例
+详细文档请参阅：
+- [ProgrammingTask/README.md](ProgrammingTask/README.md) - 任务说明
+- [ProgrammingTask/docs/language_spec.md](ProgrammingTask/docs/language_spec.md) - 语言规范
+- [ProgrammingTask/docs/design_notes.md](ProgrammingTask/docs/design_notes.md) - 设计说明

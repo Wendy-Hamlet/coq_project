@@ -5,7 +5,7 @@ int x;
 int y;
 int* p;
 int* q;
-p := &x;
-q := &y;
+p = &x;
+q = &y;
 int* r;
-r := p + q
+r = p + q

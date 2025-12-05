@@ -1,6 +1,15 @@
-int* p;
+# Pointer operations example
+# Demonstrates pointer declarations, address-of, dereference, and deref assignment
+
 int x;
-x := 5;
-p := &x;
-int y;
-y := *p
+int* p;
+int** pp;
+
+x = 100;
+p = &x;
+pp = &p;
+
+int val;
+val = *p;
+
+*p = 200
