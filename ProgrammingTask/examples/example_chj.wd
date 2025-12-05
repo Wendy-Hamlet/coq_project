@@ -1,0 +1,314 @@
+# Comprehensive WhileD Language Example
+# This program demonstrates all language features
+
+# ============================================
+# 1. Basic type declarations (short, int, long, long long)
+# ============================================
+short s;
+int i;
+long l;
+long long ll;
+
+s = 10;
+i = 100;
+l = 1000;
+ll = 10000;
+
+# ============================================
+# 2. Arithmetic operations (+, -, *, /, %)
+# ============================================
+int a;
+int b;
+int sum;
+int diff;
+int prod;
+int quot;
+int rem;
+
+a = 17;
+b = 5;
+sum = a + b;
+diff = a - b;
+prod = a * b;
+quot = a / b;
+rem = a % b;
+
+# ============================================
+# 3. Comparison operations (==, !=, <, >, <=, >=)
+# ============================================
+int x;
+int y;
+int cmp_result;
+
+x = 10;
+y = 20;
+
+if (x < y) then {
+    cmp_result = 1
+} else {
+    cmp_result = 0
+};
+
+if (x == 10) then {
+    cmp_result = cmp_result + 1
+} else {
+    skip
+};
+
+if (y >= 20) then {
+    cmp_result = cmp_result + 1
+} else {
+    skip
+}
+
+# ============================================
+# 4. Logical operations (&&, ||, !)
+# ============================================
+;
+int p;
+int q;
+int logic_and;
+int logic_or;
+int logic_not;
+
+p = 1;
+q = 0;
+logic_and = p && q;
+logic_or = p || q;
+logic_not = !q;
+
+# Complex logical expression
+int complex_logic;
+complex_logic = (x > 5) && (y < 30) || !(p == 0)
+
+# ============================================
+# 5. Pointer operations (&, *, pointer arithmetic)
+# ============================================
+;
+int value;
+int* ptr;
+int deref_val;
+
+value = 42;
+ptr = &value;
+deref_val = *ptr;
+
+# Pointer arithmetic
+int arr_sim;
+int* p_arr;
+p_arr = &arr_sim;
+p_arr = p_arr + 1;
+p_arr = p_arr - 1
+
+# ============================================
+# 6. Multi-level pointers (int**, int***)
+# ============================================
+;
+int base;
+int* level1;
+int** level2;
+
+base = 999;
+level1 = &base;
+level2 = &level1;
+
+int retrieved;
+retrieved = **level2
+
+# ============================================
+# 7. Deref assignment (*ptr = expr)
+# ============================================
+;
+int target;
+int* target_ptr;
+
+target = 0;
+target_ptr = &target;
+*target_ptr = 100;
+
+# Modify through double pointer
+int val2;
+int* ptr2;
+int** pptr2;
+
+val2 = 50;
+ptr2 = &val2;
+pptr2 = &ptr2;
+**pptr2 = 200
+
+# ============================================
+# 8. Type casting (explicit conversion)
+# ============================================
+;
+short small;
+int medium;
+long large;
+long long huge;
+
+small = 5;
+medium = (int) small;
+large = (long) medium;
+huge = (long long) large;
+
+# Downcast (may lose precision in real execution)
+int downcast;
+downcast = (int) huge
+
+# ============================================
+# 9. Implicit type conversion
+# ============================================
+;
+short s1;
+int i1;
+long l1;
+
+s1 = 10;
+i1 = s1;
+l1 = i1;
+
+# Mixed arithmetic (auto-promotion)
+long result;
+result = s1 + i1 + l1
+
+# ============================================
+# 10. Control flow: if-then-else (with nesting)
+# ============================================
+;
+int grade;
+int level;
+
+grade = 85;
+
+if (grade >= 90) then {
+    level = 4
+} else {
+    if (grade >= 80) then {
+        level = 3
+    } else {
+        if (grade >= 70) then {
+            level = 2
+        } else {
+            if (grade >= 60) then {
+                level = 1
+            } else {
+                level = 0
+            }
+        }
+    }
+}
+
+# ============================================
+# 11. Control flow: while loop
+# ============================================
+;
+int n;
+int factorial;
+
+n = 5;
+factorial = 1;
+
+while (n > 0) do {
+    factorial = factorial * n;
+    n = n - 1
+}
+
+# ============================================
+# 12. Nested loops
+# ============================================
+;
+int outer;
+int inner;
+int total;
+
+outer = 3;
+total = 0;
+
+while (outer > 0) do {
+    inner = 3;
+    while (inner > 0) do {
+        total = total + 1;
+        inner = inner - 1
+    };
+    outer = outer - 1
+}
+
+# ============================================
+# 13. Scope demonstration
+# ============================================
+;
+int global_var;
+global_var = 100;
+
+if (global_var > 0) then {
+    int local_then;
+    local_then = global_var + 1;
+    global_var = local_then
+} else {
+    int local_else;
+    local_else = 0;
+    global_var = local_else
+};
+
+while (global_var > 95) do {
+    int loop_local;
+    loop_local = global_var - 1;
+    global_var = loop_local
+}
+
+# ============================================
+# 14. Unary minus
+# ============================================
+;
+int positive;
+int negative;
+
+positive = 42;
+negative = -positive;
+negative = -(-negative)
+
+# ============================================
+# 15. Complex expressions (precedence test)
+# ============================================
+;
+int expr_result;
+
+# Tests: || < && < comparison < +- < */
+# Expected grouping: (1 || ((0 && (2 > 1)) && ((3 + (4 * 5)) < 100)))
+expr_result = 1 || 0 && 2 > 1 && 3 + 4 * 5 < 100;
+
+# Parentheses override precedence
+expr_result = (1 || 0) && (2 > 1);
+expr_result = 3 + 4 * 5;
+expr_result = (3 + 4) * 5
+
+# ============================================
+# Final: Combine everything - Simple algorithm
+# Find maximum of two values using pointers
+# ============================================
+;
+int val_a;
+int val_b;
+int* max_ptr;
+int max_val;
+
+val_a = 73;
+val_b = 91;
+
+if (val_a > val_b) then {
+    max_ptr = &val_a
+} else {
+    max_ptr = &val_b
+};
+
+max_val = *max_ptr;
+
+# Swap values using pointers
+int* swap_a;
+int* swap_b;
+int temp;
+
+swap_a = &val_a;
+swap_b = &val_b;
+temp = *swap_a;
+*swap_a = *swap_b;
+*swap_b = temp
