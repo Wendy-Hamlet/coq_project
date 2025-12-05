@@ -1,11 +1,16 @@
+/**
+ * Main entry point for the typed WhileD compiler.
+ * Usage: whiled [source_file]
+ * If no source file is provided, reads from stdin.
+ */
 #include <stdio.h>
 #include <stdlib.h>
-#include "driver.h" 
+#include "driver.h"
 
 int main(int argc, char **argv) {
     FILE *input = stdin;
 
-    // 1. 处理命令行参数
+    /* Step 1: Process command line arguments */
     if (argc > 1) {
         input = fopen(argv[1], "r");
         if (!input) {
@@ -14,10 +19,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    // 2. 将控制权交给 Driver
+    /* Step 2: Hand control to the driver for compilation */
     int result = driver_compile(input);
 
-    // 3. 清理资源
+    /* Step 3: Clean up resources */
     if (input != stdin) {
         fclose(input);
     }

@@ -1,0 +1,8 @@
+# Error test case: Pointer multiplication (invalid)
+# Expected: Type error - pointers cannot participate in multiplication
+
+int x;
+int* p;
+p := &x;
+int* q;
+q := p * 2

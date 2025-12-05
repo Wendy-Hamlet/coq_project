@@ -1,0 +1,11 @@
+# Test case: Pointer to pointer (multi-level pointers)
+# Tests: int**, int***
+
+int x;
+x := 10;
+int* p;
+p := &x;
+int** pp;
+pp := &p;
+int val;
+val := **pp

@@ -54,18 +54,68 @@ static void check_expr(Expr *e) {
                 case BIN_EQ: case BIN_NEQ:
                 case BIN_LT: case BIN_GT:
                 case BIN_LE: case BIN_GE:
+                    /* Comparison operators */
                     if (!type_can_convert(l, r) && !type_can_convert(r, l)) {
-                        fprintf(stderr, "Error: Cannot compare incompatible types\n");
-                        exit(1);
+                        error("Cannot compare incompatible types");
                     }
                     e->expr_type = type_make_basic(TYPE_INT); 
                     break;
                 
-                default: 
+                case BIN_MUL: case BIN_DIV: case BIN_MOD:
+                    /* Multiplication/division/modulo: pointers not allowed */
+                    if (type_is_pointer(l) || type_is_pointer(r)) {
+                        error("Pointer types cannot participate in multiplication, division, or modulo operations");
+                    }
                     e->expr_type = type_common(l, r);
                     if (e->expr_type->kind == TYPE_ERROR) {
-                        fprintf(stderr, "Error: Incompatible types in arithmetic operation\n");
-                        exit(1);
+                        error("Incompatible types in arithmetic operation");
+                    }
+                    break;
+
+                case BIN_ADD:
+                    /* Addition: pointer + pointer is not allowed */
+                    if (type_is_pointer(l) && type_is_pointer(r)) {
+                        error("Cannot add two pointer types");
+                    }
+                    /* pointer + int or int + pointer is allowed (pointer arithmetic) */
+                    if (type_is_pointer(l)) {
+                        if (!type_is_integer(r)) {
+                            error("Pointer arithmetic requires integer offset");
+                        }
+                        e->expr_type = l;
+                    } else if (type_is_pointer(r)) {
+                        if (!type_is_integer(l)) {
+                            error("Pointer arithmetic requires integer offset");
+                        }
+                        e->expr_type = r;
+                    } else {
+                        e->expr_type = type_common(l, r);
+                        if (e->expr_type->kind == TYPE_ERROR) {
+                            error("Incompatible types in addition");
+                        }
+                    }
+                    break;
+
+                case BIN_SUB:
+                    /* Subtraction: pointer - pointer gives integer (difference) */
+                    /* pointer - int is allowed; int - pointer is not */
+                    if (type_is_pointer(l) && type_is_pointer(r)) {
+                        if (!type_equal(l, r)) {
+                            error("Cannot subtract pointers of different types");
+                        }
+                        e->expr_type = type_make_basic(TYPE_LLONG); /* ptrdiff_t equivalent */
+                    } else if (type_is_pointer(l)) {
+                        if (!type_is_integer(r)) {
+                            error("Pointer subtraction requires integer offset");
+                        }
+                        e->expr_type = l;
+                    } else if (type_is_pointer(r)) {
+                        error("Cannot subtract pointer from integer");
+                    } else {
+                        e->expr_type = type_common(l, r);
+                        if (e->expr_type->kind == TYPE_ERROR) {
+                            error("Incompatible types in subtraction");
+                        }
                     }
                     break;
             }
@@ -98,10 +148,8 @@ static void check_expr(Expr *e) {
 
         case AST_CAST:
             check_expr(e->v.cast.e);
-            if (!type_can_convert(e->v.cast.e->expr_type, e->v.cast.to_type)) {
-                // 警告但不报错，强制转换通常是允许的
-                // fprintf(stderr, "Warning: Explicit cast between incompatible types\n");
-            }
+            /* Explicit casts are usually allowed, so we just warn but don't error */
+            /* Warning: Explicit cast between incompatible types */
             e->expr_type = e->v.cast.to_type;
             break;
     }
@@ -135,36 +183,42 @@ static void check_stmt(Stmt *s) {
         }
 
         case STMT_DECL: {
-            current_scope = symtab_push(current_scope);
-
+            /* Insert declaration into current scope (don't create new scope) */
+            /* This allows variables declared at the same level to be visible to each other */
             bool success = symtab_insert(current_scope, s->v.decl.var_name, s->v.decl.decl_type);
             if (!success) {
                 error_redefined_var(s->v.decl.var_name);
             }
 
             check_stmt(s->v.decl.body);
-
-            current_scope = symtab_pop(current_scope);
             break;
         }
 
         case STMT_IF:
+            /* Create new scope for if branches */
             check_expr(s->v.ifstmt.cond);
             if (!type_is_integer(s->v.ifstmt.cond->expr_type)) {
                 error("IF condition must be an integer/boolean type");
             }
+            current_scope = symtab_push(current_scope);
             check_stmt(s->v.ifstmt.then_branch);
+            current_scope = symtab_pop(current_scope);
             if (s->v.ifstmt.else_branch) {
+                current_scope = symtab_push(current_scope);
                 check_stmt(s->v.ifstmt.else_branch);
+                current_scope = symtab_pop(current_scope);
             }
             break;
 
         case STMT_WHILE:
+            /* Create new scope for while body */
             check_expr(s->v.whilestmt.cond);
             if (!type_is_integer(s->v.whilestmt.cond->expr_type)) {
                 error("WHILE condition must be an integer/boolean type");
             }
+            current_scope = symtab_push(current_scope);
             check_stmt(s->v.whilestmt.body);
+            current_scope = symtab_pop(current_scope);
             break;
     }
 }

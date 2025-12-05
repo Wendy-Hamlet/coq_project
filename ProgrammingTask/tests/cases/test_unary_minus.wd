@@ -1,0 +1,7 @@
+# Test case: Unary minus operator
+# Tests: -expression
+
+int a;
+int b;
+a := 10;
+b := -a

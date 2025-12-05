@@ -1,0 +1,6 @@
+# Error test case: Undefined variable
+# Expected: Semantic error - undefined variable
+
+int x;
+x := 10;
+y := 20

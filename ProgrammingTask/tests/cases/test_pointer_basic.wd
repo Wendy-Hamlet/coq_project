@@ -1,0 +1,9 @@
+# Test case: Basic pointer operations
+# Tests: pointer declaration, address-of (&), dereference (*)
+
+int x;
+x := 42;
+int* p;
+p := &x;
+int y;
+y := *p

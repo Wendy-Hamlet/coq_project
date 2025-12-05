@@ -1,0 +1,11 @@
+# Error test case: Pointer addition (pointer + pointer is invalid)
+# Expected: Type error - cannot add two pointers
+
+int x;
+int y;
+int* p;
+int* q;
+p := &x;
+q := &y;
+int* r;
+r := p + q

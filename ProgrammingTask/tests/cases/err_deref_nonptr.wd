@@ -1,0 +1,7 @@
+# Error test case: Dereference non-pointer
+# Expected: Type error - cannot dereference non-pointer
+
+int x;
+x := 10;
+int y;
+y := *x

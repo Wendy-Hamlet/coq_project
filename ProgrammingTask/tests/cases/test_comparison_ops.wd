@@ -1,0 +1,28 @@
+# Test case: Comparison operators
+# Tests: ==, !=, <, >, <=, >=
+
+int a;
+int b;
+int result;
+a := 10;
+b := 20;
+if a == b then
+    result := 1
+else
+    result := 0
+fi;
+if a != b then
+    result := result + 1
+else
+    skip
+fi;
+if a < b then
+    result := result + 1
+else
+    skip
+fi;
+if a <= b then
+    result := result + 1
+else
+    skip
+fi

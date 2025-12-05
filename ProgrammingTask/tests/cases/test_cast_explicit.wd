@@ -1,0 +1,11 @@
+# Test case: Explicit type casting
+# Tests: (type) expression syntax
+
+short a;
+a := 10;
+int b;
+b := (int) a;
+long c;
+c := (long) b;
+long long d;
+d := (long long) c

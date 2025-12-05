@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* 辅助函数：分配内存 */
+/* Helper function: allocate memory for expression */
 static Expr *alloc_expr(ExprKind kind) {
   Expr *e = (Expr *)malloc(sizeof(Expr));
   if (!e) {
@@ -27,7 +27,7 @@ static Stmt *alloc_stmt(StmtKind kind) {
   return s;
 }
 
-/* 表达式构造函数 */
+/* Expression constructors */
 Expr *ast_int_literal(long long v) {
   Expr *e = alloc_expr(AST_INT_LITERAL);
   e->v.int_val = v;
@@ -73,7 +73,7 @@ Expr *ast_cast(Type *t, Expr *sub) {
   return e;
 }
 
-/* 语句构造函数 */
+/* Statement constructors */
 Stmt *ast_skip() { return alloc_stmt(STMT_SKIP); }
 
 Stmt *ast_seq(Stmt *s1, Stmt *s2) {
@@ -113,8 +113,8 @@ Stmt *ast_while(Expr *c, Stmt *body) {
   return s;
 }
 
-/* AST 打印工具已移动到 ast_printer.c */
+/* AST printing utilities have been moved to ast_printer.c */
 
-/* 释放内存 (可选，暂留空) */
+/* Memory deallocation (optional, left empty for now) */
 void ast_free_expr(Expr *e) {}
 void ast_free_stmt(Stmt *s) {}

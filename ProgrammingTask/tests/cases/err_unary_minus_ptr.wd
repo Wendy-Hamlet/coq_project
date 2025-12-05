@@ -1,0 +1,8 @@
+# Error test case: Unary minus on pointer
+# Expected: Type error - unary minus requires integer operand
+
+int x;
+int* p;
+p := &x;
+int* q;
+q := -p

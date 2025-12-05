@@ -1,0 +1,13 @@
+# Test case: Conditional statements
+# Tests: if-then-else with type checking
+
+int x;
+int y;
+int z;
+x := 10;
+y := 20;
+if x < y then
+    z := y - x
+else
+    z := x - y
+fi

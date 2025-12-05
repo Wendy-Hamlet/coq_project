@@ -1,0 +1,9 @@
+# Test case: Nested scopes with variable shadowing
+# Tests: scope management, variable shadowing in declarations
+
+int x;
+x := 10;
+int y;
+y := x + 5;
+int z;
+z := x + y

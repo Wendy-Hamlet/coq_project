@@ -1,0 +1,7 @@
+# Error test case: Address of expression result (rvalue)
+# Expected: Type error - cannot take address of expression result
+# Note: &IDENT is allowed in grammar, so we test &(*p) with wrong type
+
+int x;
+int** pp;
+pp := &x
