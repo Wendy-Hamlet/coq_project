@@ -35,7 +35,7 @@ Stmt *parse_result = NULL;
 /* Non-terminals with types */
 %type <type_val> type basetype
 %type <expr_val> expr term factor
-%type <stmt_val> stmt program commands command
+%type <stmt_val> program commands command
 
 /* Operator precedence and associativity */
 %left EQ NEQ
