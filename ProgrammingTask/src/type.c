@@ -54,6 +54,7 @@ bool type_can_convert(Type *from, Type *to) {
 		/* allow pointer conversion only when base types are equal */
 		return type_equal(from->base, to->base);
 	}
+	/* Disallow implicit pointer-integer conversion (require explicit cast) */
 	return false;
 }
 

@@ -1,0 +1,8 @@
+# Error: Implicit integer to pointer conversion (should fail)
+int x;
+int* ptr;
+long long addr;
+
+x = 100;
+addr = 12345678;
+ptr = addr

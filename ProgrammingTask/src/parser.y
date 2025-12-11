@@ -134,7 +134,7 @@ unary:
     | STAR unary %prec UNARY
                             { $$ = ast_deref($2); }
     | AMPERSAND unary %prec UNARY
-                            { $$ = ast_addr($2); }
+                            { $$ = ast_addr($2); }   /* Allows &x, &(*ptr), etc. */
     ;
 
 factor:

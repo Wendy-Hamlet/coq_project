@@ -1,0 +1,16 @@
+# Error: Comparing pointers of different types (should fail)
+int x;
+long y;
+int* px;
+long* py;
+int result;
+
+x = 10;
+y = 20;
+px = &x;
+py = &y;
+if (px == py) then {
+    result = 1
+} else {
+    result = 0
+}

@@ -1,0 +1,6 @@
+# Error: Taking address of rvalue (should fail)
+int x;
+int* ptr;
+
+x = 10;
+ptr = &(x + 5)

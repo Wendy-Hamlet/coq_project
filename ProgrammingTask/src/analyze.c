@@ -52,11 +52,34 @@ static void check_expr(Expr *e) {
 
             switch (e->v.binop.op) {
                 case BIN_EQ: case BIN_NEQ:
+                    /* Equality operators: Allow comparison between same types */
+                    /* For pointers: only same pointer types can be compared */
+                    /* For integers: allow comparison with implicit conversion */
+                    if (type_is_pointer(l) && type_is_pointer(r)) {
+                        if (!type_equal(l, r)) {
+                            error("Cannot compare pointers of different types");
+                        }
+                    } else if (type_is_pointer(l) || type_is_pointer(r)) {
+                        error("Cannot compare pointer with non-pointer type");
+                    } else if (!type_is_integer(l) || !type_is_integer(r)) {
+                        error("Comparison requires integer types");
+                    }
+                    e->expr_type = type_make_basic(TYPE_INT);
+                    break;
+                
                 case BIN_LT: case BIN_GT:
                 case BIN_LE: case BIN_GE:
-                    /* Comparison operators */
-                    if (!type_can_convert(l, r) && !type_can_convert(r, l)) {
-                        error("Cannot compare incompatible types");
+                    /* Relational operators: Only for integers OR pointers to same object */
+                    /* For pointers: require same type (implementation assumes same object) */
+                    if (type_is_pointer(l) && type_is_pointer(r)) {
+                        if (!type_equal(l, r)) {
+                            error("Cannot compare pointers of different types");
+                        }
+                        /* Warning: Pointer comparison result is defined only if both point to elements of the same array */
+                    } else if (type_is_pointer(l) || type_is_pointer(r)) {
+                        error("Cannot compare pointer with non-pointer type");
+                    } else if (!type_is_integer(l) || !type_is_integer(r)) {
+                        error("Comparison requires integer types");
                     }
                     e->expr_type = type_make_basic(TYPE_INT); 
                     break;
@@ -103,7 +126,8 @@ static void check_expr(Expr *e) {
                         if (!type_equal(l, r)) {
                             error("Cannot subtract pointers of different types");
                         }
-                        e->expr_type = type_make_basic(TYPE_LLONG); /* ptrdiff_t equivalent */
+                        /* Returns long long (ptrdiff_t equivalent): number of elements between pointers */
+                        e->expr_type = type_make_basic(TYPE_LLONG);
                     } else if (type_is_pointer(l)) {
                         if (!type_is_integer(r)) {
                             error("Pointer subtraction requires integer offset");
@@ -146,10 +170,12 @@ static void check_expr(Expr *e) {
             e->expr_type = type_make_basic(TYPE_INT);
             break;
 
-        case AST_ADDR: // &x
+        case AST_ADDR: // &x or &(*ptr)
             check_expr(e->v.unop.e);
+            /* Allow address of any lvalue: variables, dereferences, etc. */
+            /* This enables patterns like &(*ptr) which simplifies to ptr */
             if (e->v.unop.e->kind != AST_VAR && e->v.unop.e->kind != AST_DEREF) {
-                error("Cannot take address of rvalue (need a variable or dereference)");
+                error("Cannot take address of rvalue (need an lvalue: variable or dereference)");
             }
             e->expr_type = type_make_ptr(e->v.unop.e->expr_type);
             break;
@@ -167,8 +193,9 @@ static void check_expr(Expr *e) {
 
         case AST_CAST:
             check_expr(e->v.cast.e);
-            /* Explicit casts are usually allowed, so we just warn but don't error */
-            /* Warning: Explicit cast between incompatible types */
+            /* Explicit casts allow conversions not permitted implicitly */
+            /* This includes pointer-to-integer and integer-to-pointer conversions */
+            /* Examples: (int)ptr, (int*)123, (long long)&x */
             e->expr_type = e->v.cast.to_type;
             break;
     }

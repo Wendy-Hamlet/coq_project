@@ -1,0 +1,67 @@
+# Error test cases for pointer semantics
+# These should all fail semantic analysis
+
+# ====================
+# ERROR 1: Implicit pointer to integer conversion
+# ====================
+# int* ptr;
+# long long addr;
+# ptr = &addr;
+# addr = ptr;    # ERROR: Cannot implicitly convert pointer to integer
+
+# ====================
+# ERROR 2: Implicit integer to pointer conversion
+# ====================
+# long long addr;
+# int* ptr;
+# addr = 0;
+# ptr = addr;    # ERROR: Cannot implicitly convert integer to pointer
+
+# ====================
+# ERROR 3: Pointer vs integer comparison
+# ====================
+# int x;
+# int* ptr;
+# ptr = &x;
+# if (ptr == 0) then { skip } else { skip }    # ERROR: Cannot compare pointer with integer
+
+# ====================
+# ERROR 4: Different type pointer comparison
+# ====================
+# int x;
+# long y;
+# int* p1;
+# long* p2;
+# p1 = &x;
+# p2 = &y;
+# if (p1 == p2) then { skip } else { skip }    # ERROR: Cannot compare different pointer types
+
+# ====================
+# ERROR 5: Different type pointer subtraction
+# ====================
+# int x;
+# long y;
+# int* p1;
+# long* p2;
+# long long diff;
+# p1 = &x;
+# p2 = &y;
+# diff = p1 - p2;    # ERROR: Cannot subtract pointers of different types
+
+# ====================
+# ERROR 6: Address of rvalue (integer literal)
+# ====================
+# int* ptr;
+# ptr = &42;    # ERROR: Cannot take address of rvalue
+
+# ====================
+# ERROR 7: Address of expression result
+# ====================
+# int x;
+# int y;
+# int* ptr;
+# x = 1;
+# y = 2;
+# ptr = &(x + y);    # ERROR: Cannot take address of rvalue
+
+# Choose one error to test at a time by uncommenting
