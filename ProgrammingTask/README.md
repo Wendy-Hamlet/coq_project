@@ -163,21 +163,32 @@ l = (long) i     # 显式转换：int → long
 | `test_basic_types.wd` | 基本类型声明 |
 | `test_pointer_basic.wd` | 基本指针操作 |
 | `test_pointer_to_pointer.wd` | 多级指针 |
+| `test_pointer_semantics.wd` | 指针语义 |
 | `test_cast_explicit.wd` | 显式类型转换 |
 | `test_implicit_conversion.wd` | 隐式类型转换 |
 | `test_arithmetic_ops.wd` | 算术运算 |
 | `test_comparison_ops.wd` | 比较运算 |
+| `test_logical_ops.wd` | 逻辑运算 |
 | `test_if_else.wd` | 条件语句 |
 | `test_while_loop.wd` | 循环语句 |
 | `test_unary_minus.wd` | 一元负号 |
+| `test_deref_assign.wd` | 解引用赋值 |
 | `test_nested_scope.wd` | 嵌套作用域 |
 
 ### 错误检测测试（应报错）
 | 文件 | 测试的错误 |
 |------|-----------|
 | `err_undefined_var.wd` | 使用未声明变量 |
+| `err_type_mismatch.wd` | 类型不匹配 |
 | `err_pointer_add.wd` | 指针相加（非法） |
-| `err_deref_nonptr.wd` | 解引用非指针 |
 | `err_pointer_mul.wd` | 指针参与乘法（非法） |
+| `err_deref_nonptr.wd` | 解引用非指针 |
+| `err_pointer_errors.wd` | 指针相关错误 |
 | `err_unary_minus_ptr.wd` | 对指针取负（非法） |
-| `err_addr_rvalue.wd` | 类型不匹配赋值 |
+| `err_addr_rvalue.wd` | 地址值非左值 |
+| `err_int_ptr_implicit.wd` | 整数与指针隐式转换 |
+| `err_ptr_int_implicit.wd` | 指针与整数隐式转换 |
+| `err_not_ptr.wd` | 非指针类型错误 |
+| `err_ptr_int_compare.wd` | 指针与整数比较 |
+| `err_ptr_diff_type_eq.wd` | 不同类型指针相等比较 |
+| `err_ptr_diff_type_lt.wd` | 不同类型指针大小比较 |
