@@ -1,0 +1,324 @@
+# WhileD Language Features Showcase
+# Author: YLC
+# This program demonstrates key WhileD language design features,
+# especially the differences from C language
+
+# ============================================
+# 1. Explicit Pointer-Integer Conversion (§4.4)
+# ============================================
+# Unlike C, WhileD forbids implicit conversion between pointers and integers.
+# Explicit casts are required.
+
+int value;
+int* ptr;
+long long address;
+int* restored_ptr;
+
+value = 42;
+ptr = &value;
+
+# Pointer to integer: explicit cast required
+address = (long long) ptr;
+
+# Integer to pointer: explicit cast required
+restored_ptr = (int*) address;
+
+# Null pointer: must use (T*)0, not plain 0
+int* null_ptr;
+null_ptr = (int*) 0;
+
+# Verify the restored pointer still works
+int deref_value;
+deref_value = *restored_ptr
+
+# ============================================
+# 2. Pointer Subtraction Returns long long (§5.3)
+# ============================================
+# The result type of pointer subtraction is explicitly defined as long long.
+
+;
+int a1;
+int a2;
+int a3;
+int* p1;
+int* p2;
+
+a1 = 10;
+a2 = 20;
+a3 = 30;
+
+p1 = &a1;
+p2 = &a3;
+
+# Pointer subtraction yields long long
+long long ptr_diff;
+ptr_diff = p2 - p1;
+
+# Can cast to smaller types if needed
+int diff_as_int;
+diff_as_int = (int) (p2 - p1);
+
+# Pointer difference in mixed arithmetic
+long long mixed;
+mixed = (p2 - p1) + 100
+
+# ============================================
+# 3. Strict Pointer Comparison Rules (§5.4)
+# ============================================
+# Only same-type pointers can be compared.
+# Pointer-integer comparison requires explicit cast.
+
+;
+int x;
+int y;
+int* px;
+int* py;
+
+x = 100;
+y = 200;
+px = &x;
+py = &y;
+
+# Same-type pointer equality: allowed
+int are_equal;
+are_equal = (px == py);
+
+# Same-type pointer inequality: allowed
+int are_not_equal;
+are_not_equal = (px != py);
+
+# Same-type pointer relational comparison: allowed
+int px_less_than_py;
+px_less_than_py = (px < py);
+
+int px_greater_than_py;
+px_greater_than_py = (px > py);
+
+# Null check: must cast 0 to pointer type
+int is_null;
+is_null = (px == (int*) 0);
+
+int is_not_null;
+is_not_null = (px != (int*) 0)
+
+# ============================================
+# 4. Extended Address-of Operator (§5.5)
+# ============================================
+# The & operator now works on any lvalue, including dereference expressions.
+
+;
+int base;
+int* ptr_to_base;
+int** ptr_to_ptr;
+
+base = 999;
+ptr_to_base = &base;
+ptr_to_ptr = &ptr_to_base;
+
+# Address of dereference: &(*ptr) equals ptr
+int* addr_of_deref;
+addr_of_deref = &(*ptr_to_base);
+
+# Multi-level dereference then address-of
+int* addr_of_double_deref;
+addr_of_double_deref = &(**ptr_to_ptr);
+
+# Verify: these should point to the same address
+int same_address;
+same_address = (addr_of_deref == ptr_to_base)
+
+# ============================================
+# 5. No Pointer in Logical Operations (§5.2)
+# ============================================
+# Unlike C, WhileD forbids if(ptr), !ptr, ptr && ptr.
+# Must use explicit comparison.
+
+;
+int* maybe_null;
+int* definitely_valid;
+int check_result;
+
+maybe_null = (int*) 0;
+int valid_value;
+valid_value = 123;
+definitely_valid = &valid_value;
+
+# Cannot write if(ptr), must write if(ptr != (T*)0)
+if (maybe_null != (int*) 0) then {
+    check_result = 1
+} else {
+    check_result = 0
+};
+
+# Cannot write !ptr, must use comparison
+int is_null_flag;
+is_null_flag = (maybe_null == (int*) 0);
+
+# Complex condition: both pointers non-null
+int both_valid;
+if ((maybe_null != (int*) 0) && (definitely_valid != (int*) 0)) then {
+    both_valid = 1
+} else {
+    both_valid = 0
+}
+
+# ============================================
+# 6. Type Promotion Chain (§4.1)
+# ============================================
+# Implicit promotion: short < int < long < long long
+
+;
+short s;
+int i;
+long l;
+long long ll;
+
+s = 10;
+i = 100;
+l = 1000;
+ll = 10000;
+
+# Mixed arithmetic: step-by-step promotion
+# s(short) + i(int) -> int
+# int + l(long) -> long
+# long + ll(long long) -> long long
+long long chain_result;
+chain_result = s + i + l + ll;
+
+# Explicit downcast
+short back_to_short;
+back_to_short = (short) chain_result;
+
+# Assignment conversion (high -> low allowed, may lose precision)
+int high_to_low;
+high_to_low = ll
+
+# ============================================
+# 7. Multi-level Pointers
+# ============================================
+# Demonstrates triple pointer usage
+
+;
+long long deep_value;
+long long* level1;
+long long** level2;
+long long*** level3;
+
+deep_value = 12345;
+level1 = &deep_value;
+level2 = &level1;
+level3 = &level2;
+
+# Read value through triple pointer
+long long read_through_3;
+read_through_3 = ***level3;
+
+# Modify value through triple pointer
+***level3 = 54321;
+
+# Verify modification
+long long verify;
+verify = deep_value;
+
+# Pointer level navigation
+long long** from_level3;
+from_level3 = *level3;
+
+long long* from_level2;
+from_level2 = *from_level3
+
+# ============================================
+# 8. Scope and Variable Shadowing
+# ============================================
+# Block scope and variable shadowing demonstration
+
+;
+int scope_test;
+scope_test = 100;
+
+if (scope_test > 0) then {
+    # Inner variable shadows outer
+    int scope_test;
+    scope_test = 50;
+    
+    # Deeper nesting
+    if (scope_test > 0) then {
+        int scope_test;
+        scope_test = 25;
+        
+        # Innermost modification only affects innermost variable
+        scope_test = scope_test + 1
+    } else {
+        skip
+    };
+    
+    # Here scope_test is still 50
+    scope_test = scope_test + 1
+} else {
+    skip
+};
+
+# Outer scope_test is still 100
+int final_check;
+final_check = scope_test
+
+# ============================================
+# 9. Algorithm Example: Swap using Pointers
+# ============================================
+# Demonstrates pointer usage for basic algorithms
+
+;
+int swap_a;
+int swap_b;
+int* ptr_a;
+int* ptr_b;
+int temp;
+
+swap_a = 10;
+swap_b = 20;
+
+ptr_a = &swap_a;
+ptr_b = &swap_b;
+
+# Swap values through pointers
+temp = *ptr_a;
+*ptr_a = *ptr_b;
+*ptr_b = temp;
+
+# Verify swap: swap_a should be 20, swap_b should be 10
+int swap_success;
+swap_success = (swap_a == 20) && (swap_b == 10)
+
+# ============================================
+# 10. Pointer Arithmetic
+# ============================================
+# Pointer arithmetic for array-like access simulation
+
+;
+int arr_0;
+int arr_1;
+int arr_2;
+int* arr_base;
+
+arr_0 = 100;
+arr_1 = 200;
+arr_2 = 300;
+
+# Get "array" base address
+arr_base = &arr_0;
+
+# Pointer arithmetic: simulate arr[1]
+int* arr_ptr_1;
+arr_ptr_1 = arr_base + 1;
+
+# Pointer arithmetic: simulate arr[2]
+int* arr_ptr_2;
+arr_ptr_2 = arr_base + 2;
+
+# Calculate distance between two "elements"
+long long distance;
+distance = arr_ptr_2 - arr_base;
+
+# Move pointer backward
+int* moved_ptr;
+moved_ptr = arr_ptr_2 - 1
