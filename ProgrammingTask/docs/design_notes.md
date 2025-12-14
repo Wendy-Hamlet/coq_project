@@ -234,12 +234,12 @@ typedef struct SymTab {
 
 ### 7.2 语法结构
 
-使用大括号包裹语句块：
+使用大括号包裹语句块, 以及解引用赋值：
 
 ```ebnf
 if_stmt    ::= 'if' '(' expr ')' 'then' '{' commands '}' 'else' '{' commands '}'
 while_stmt ::= 'while' '(' expr ')' 'do' '{' commands '}'
-deref_assign ::= '*' expr '=' expr   /* 解引用赋值 */
+deref_assign ::= '*' expr '=' expr   
 ```
 
 ### 7.3 语义动作
@@ -282,14 +282,3 @@ echo "int x; x = 5" | ./build/bin/ast_pretty
 `run_tests.sh` 脚本自动执行所有测试并验证结果：
 - 正确性测试检查返回码为 0
 - 错误测试检查返回码非 0
-
----
-
-## 10. 已知限制
-
-1. **无代码生成**：仅实现前端分析，不生成目标代码
-2. **单文件编译**：不支持多文件或模块
-3. **无数组类型**：仅支持标量和指针
-4. **无函数**：不支持函数定义或调用
-5. **错误恢复有限**：遇到第一个错误即终止
-
