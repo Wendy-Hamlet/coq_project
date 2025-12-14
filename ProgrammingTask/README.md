@@ -89,25 +89,20 @@ make
 
 ## 示例程序
 
-示例程序位于 `examples/` 目录，由小组成员分别编写：
+示例程序位于 `examples/` 目录，由小组成员分别编写。
 
-| 文件 | 作者 | 说明 |
-|------|------|------|
-| `example_chj.wd` | CHJ | 综合示例（完整语言特性演示） |
-| `example_hyd.wd` | HYD | 示例程序 |
-| `example_ylc.wd` | YLC | 示例程序 |
 
 ### 运行示例
 
 ```bash
 # 运行单个示例
-./build/bin/whiled examples/example_chj.wd
+./build/bin/whiled examples/example_1.wd
 
 # 运行全部示例
 ./tests/run_examples.sh
 
 # 查看 AST 结构
-./build/bin/ast_pretty examples/example_chj.wd
+./build/bin/ast_pretty examples/example_1.wd
 ```
 
 ## 使用示例
