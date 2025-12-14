@@ -1,0 +1,109 @@
+# ============================================================
+# WhileD Language Comprehensive Showcase
+# ============================================================
+# This program implements a "Pseudo-Random Number Generator" 
+# and a "State Machine" simulation to demonstrate:
+# 1. Strict Type System & Implicit Promotion Chain
+# 2. Mandatory Explicit Casting (Pointer <-> Integer)
+# 3. Multi-level Pointer Indirection
+# 4. Complex Scoping & Variable Shadowing
+# 5. Strict Logical Expressions (No pointer truthiness)
+# ============================================================
+
+# --- Section 1: Global State Setup & Basic Types ---
+short counter;
+int state_val;
+long accumulator;
+long long big_checksum;
+
+counter = 0;
+state_val = 42;
+accumulator = 1000;
+big_checksum = 0;
+
+# --- Section 2: Advanced Pointer Manipulation ---
+# Using double pointers to modify state indirectly
+int* state_ptr;
+int** state_handle;
+
+state_ptr = &state_val;
+state_handle = &state_ptr;
+
+# Validating pointer logic (Strict: ptr != 0 is ILLEGAL, must be (type*)0)
+if (state_ptr != (int*)0) then {
+    # Modify via double dereference
+    **state_handle = 50
+} else {
+    skip
+};
+
+# --- Section 3: The Simulation Loop ---
+# Loop runs 5 times using a short counter
+while (counter < 5) do {
+    
+    # [Feature: Scope Shadowing] 
+    # This 'temp_calc' shadows any potential outer variable
+    int temp_calc;
+    temp_calc = (int)counter * 10; 
+
+    # [Feature: Implicit Type Promotion]
+    # short(counter) + int(state_val) + long(accumulator) -> promotes to long
+    # Then assigned to long long (big_checksum)
+    big_checksum = big_checksum + counter + **state_handle + accumulator;
+
+    # [Feature: Complex Control Flow & Logical Operators]
+    # Logic requires strictly INT operands. Pointers in logic are FORBIDDEN.
+    # Correct: (a > b) && (c != 0)
+    if ((temp_calc >= 20) && (state_val < 100)) then {
+        
+        # [Feature: Nested Scope]
+        long long inner_scope_val;
+        inner_scope_val = big_checksum;
+        
+        # [Feature: Pointer Arithmetic]
+        # WhileD allows ptr + int -> ptr
+        # We simulate moving a pointer (though unsafe in raw memory, it compiles)
+        int* next_ptr;
+        next_ptr = state_ptr + 1;
+        
+        # [Feature: Pointer Difference]
+        # ptr - ptr -> returns long long
+        long long diff;
+        diff = next_ptr - state_ptr;
+        
+        # Add the pointer difference (1) to our checksum
+        big_checksum = big_checksum + diff
+
+    } else {
+        # Alternate path logic
+        accumulator = accumulator - 10
+    };
+
+    # [Feature: Explicit Integer <-> Pointer Conversion]
+    # In C, this might be implicit warnings. In WhileD, this is strict.
+    long long addr_as_int;
+    addr_as_int = (long long)state_ptr;
+    
+    # Simulate "hashing" the address
+    addr_as_int = addr_as_int + 4;
+    
+    # Cast back (explicitly required)
+    int* forged_ptr;
+    forged_ptr = (int*)addr_as_int;
+
+    # Increment counter
+    counter = counter + 1
+};
+
+# --- Section 4: Final Validation ---
+# Verify operations using strict comparison
+int is_success;
+is_success = 0;
+
+# Complex expression precedence check
+# (state_val == 50) && (counter == 5) || (big_checksum > 0)
+if ((state_val == 50) && (counter == 5)) then {
+    is_success = 1
+} else {
+    is_success = 0
+}
