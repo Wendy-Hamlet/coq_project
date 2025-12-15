@@ -44,3 +44,29 @@ Fixpoint sllseg (x y: addr) (l: list Z): Assertion :=
 Definition map_mult (x: Z) (l: list Z): list Z :=
   List.map (fun a => x * a) l.
 
+(* sllbseg: segment of a list box - kept for potential future use *)
+Fixpoint sllbseg (x y: addr) (l: list Z): Assertion :=
+  match l with
+    | nil     => [| x = y |] && emp
+    | a :: l0 => EX z: addr,
+                   [| z <> NULL |] &&
+                   x # Ptr |-> z **
+                   &(z # "sll" ->ₛ "data") # Int |-> a **
+                   sllbseg (&(z # "sll" ->ₛ "next")) y l0
+  end.
+
+(* sllb: a list box containing a singly linked list
+   - head: pointer to the first node (or NULL if empty)
+   - ptail: pointer to the 'next' field of the last node (or &head if empty)
+   
+   Note: This predicate does NOT include the *ptail permission because
+   sll already contains the last node's next field (which equals NULL).
+   Functions that need to modify *ptail must use expanded specifications.
+*)
+Definition sllb (x: addr) (l: list Z): Assertion :=
+  EX head_val ptail_val: addr,
+    [| x <> NULL |] &&
+    &(x # "sllb" ->ₛ "head") # Ptr |-> head_val **
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
+    sll head_val l.
+

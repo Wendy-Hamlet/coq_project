@@ -1,9 +1,6 @@
 #include "../qcp-binary-democases/QCP_examples/verification_stdlib.h"
 #include "../qcp-binary-democases/QCP_examples/verification_list.h"
-#include "../qcp-binary-democases/QCP_examples/sll_def.h"
-#include "sll_lib.h"
-
-/*@ Extern Coq (map_mult: Z -> list Z -> list Z) */
+#include "sll_project_def.h"
 
 struct sll * nil_list()
 /*@ Require emp
@@ -77,16 +74,38 @@ void map_list(struct sll * head, unsigned int x)
     }
 }   
 
+struct sllb * new_sllb()
+/*@ Require emp
+    Ensure __return != 0 &&
+           store(&(__return -> head), 0) *
+           store(&(__return -> ptail), 0)
+*/;
+
 struct sllb * nil_list_box()
+/*@ Require emp
+    Ensure sllb(__return, nil)
+*/
 {
     struct sllb * box = new_sllb();
     box -> head = nil_list();
     box -> ptail  = & box -> head;
+    /*@ box -> head == 0 && box -> ptail == &(box -> head) && sll(0, nil)
+        which implies
+        sllb(box, nil)
+    */
     return box;
 }
 
 struct sllb * cons_list_box(unsigned int data, struct sllb * box)
+/*@ With l
+    Require sllb(box, l)
+    Ensure sllb(__return, cons(data, l))
+*/
 {
+    /*@ sllb(box, l)
+        which implies
+        exists h pt, box -> head == h && box -> ptail == pt && sll(h, l)
+    */
     box -> head = cons_list(data, box -> head);
     if (box -> ptail == & box -> head)
     {
@@ -96,19 +115,50 @@ struct sllb * cons_list_box(unsigned int data, struct sllb * box)
 }
 
 struct sllb * map_list_box(struct sllb * box, unsigned int x)
+/*@ With l
+    Require sllb(box, l)
+    Ensure sllb(__return, map_mult(x, l))
+*/
 {
+    /*@ sllb(box, l)
+        which implies
+        exists h pt, box -> head == h && box -> ptail == pt && sll(h, l)
+    */
     map_list(box -> head, x);
     return box;
 }
 
+void free_sllb(struct sllb * p)
+/*@ Require exists x y, p -> head == x && p -> ptail == y && emp
+    Ensure emp
+*/;
+
 void free_list_box(struct sllb * box)
+/*@ With l
+    Require sllb(box, l)
+    Ensure emp
+*/
 {
+    /*@ sllb(box, l)
+        which implies
+        exists h pt, box -> head == h && box -> ptail == pt && sll(h, l)
+    */
     free_list(box -> head);
     free_sllb(box);
 }
 
 struct sllb * app_list_box(struct sllb * b1, struct sllb * b2)
+/*@ With l1 l2
+    Require sllb(b1, l1) * sllb(b2, l2)
+    Ensure sllb(__return, app(l1, l2))
+*/
 {
+    /*@ sllb(b1, l1) * sllb(b2, l2)
+        which implies
+        exists h1 pt1 h2 pt2,
+            b1 -> head == h1 && b1 -> ptail == pt1 && sllbseg(&(b1 -> head), pt1, l1) * data_at(pt1, struct sll *, 0) &&
+            b2 -> head == h2 && b2 -> ptail == pt2 && sll(h2, l2)
+    */
     * (b1 -> ptail) = b2 -> head;
     if (b2 -> head != (struct sll *) 0)
     {
@@ -119,28 +169,68 @@ struct sllb * app_list_box(struct sllb * b1, struct sllb * b2)
 }
 
 unsigned int sll_length(struct sll * head)
+/*@ With l
+    Require sll(head, l) && Zlength(l) <= 2147483647
+    Ensure __return == Zlength(l) && sll(head@pre, l)
+*/
 {
     unsigned int len = 0;
+    /*@ Inv exists l1 l2,
+            l == app(l1, l2) &&
+            len == Zlength(l1) &&
+            sllseg(head@pre, head, l1) * sll(head, l2)
+    */
     while (head) {
+        /*@ exists l2, head != 0 && sll(head, l2)
+            which implies
+            exists l3, l2 == cons(head -> data, l3) && sll(head -> next, l3)
+        */
         ++ len;
         head = head -> next;
     }
     return len;
 }
 
+unsigned int * new_uint_array(unsigned int n)
+/*@ Require emp Ensure emp */;
+
 unsigned int sll2array(struct sll * head, unsigned int ** out_array)
+/*@ With l
+    Require sll(head, l) && Zlength(l) <= 2147483647
+    Ensure sll(head@pre, l)
+*/
 {
     unsigned int len = sll_length(head);
     unsigned int * arr = new_uint_array(len);
     unsigned int i = 0;
-    struct sll * p;
-    for (p = head; p; p = p -> next)
-        arr[i++] = p -> data;
+    struct sll * p = head;
+    /*@ Inv exists l1 l2,
+            l == app(l1, l2) &&
+            i == Zlength(l1) &&
+            sllseg(head@pre, p, l1) * sll(p, l2)
+    */
+    while (p) {
+        /*@ exists l2, p != 0 && sll(p, l2)
+            which implies
+            exists l3, l2 == cons(p -> data, l3) && sll(p -> next, l3)
+        */
+        *(arr + i) = p -> data;
+        i = i + 1;
+        p = p -> next;
+    }
     * out_array = arr;
     return len;
 }
 
 unsigned int sllb2array(struct sllb * box, unsigned int ** out_array)
+/*@ With l
+    Require sllb(box, l) && Zlength(l) <= 2147483647
+    Ensure sllb(box@pre, l)
+*/
 {
+    /*@ sllb(box, l)
+        which implies
+        exists h pt, box -> head == h && box -> ptail == pt && sll(h, l)
+    */
     return sll2array(box -> head, out_array);
 }

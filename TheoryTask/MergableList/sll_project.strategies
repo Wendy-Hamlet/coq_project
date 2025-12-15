@@ -1,0 +1,183 @@
+//strategies for sll and sllb verification
+//max rule id:80
+
+// sll rules - basic
+id : 3
+priority : core(0)
+left : sll(?p, nil{Z}) at 0
+action : left_erase(0);
+         left_add(p == NULL);
+
+id : 4
+priority : core(0)
+right : sll(?p, nil{Z}) at 0
+action : right_erase(0);
+         right_add(p == NULL);
+
+id : 5
+priority : core(0)
+right : sll(NULL, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 6
+priority : core(0)
+left : sll(NULL, ?l) at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 7
+priority : core(1)
+left : sll(?p, ?l0) at 0
+right : sll(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllseg rules
+id : 14
+priority : core(0)
+right : sllseg(?p, p, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 15
+priority : core(0)
+left : sllseg(?p, p, ?l) at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 16
+priority : core(1)
+left : sllseg(?p, ?q, ?l0) at 0
+right : sllseg(p, q, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllb rules - matching left and right
+id : 30
+priority : core(1)
+left : sllb(?p, ?l0) at 0
+right : sllb(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+id : 31
+priority : core(0)
+left : sllb(?p, nil{Z}) at 0
+right : sllb(p, nil{Z}) at 1
+action : left_erase(0);
+         right_erase(1);
+
+// sllbseg rules
+id : 20
+priority : core(0)
+right : sllbseg(?p, p, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 21
+priority : core(0)
+left : sllbseg(?p, p, ?l) at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 22
+priority : core(1)
+left : sllbseg(?p, ?q, ?l0) at 0
+right : sllbseg(p, q, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllb unfold rules - left side
+// sllb(p, l) = EX h pt. p != NULL && data_at(&p->head, h) ** data_at(&p->ptail, pt) ** sll(h, l)
+id : 32
+priority : core(3)
+left : sllb(?p, ?l) at 0
+action : left_erase(0);
+         left_exist_add(h);
+         left_exist_add(pt);
+         left_add(p != 0);
+         left_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         left_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
+         left_add(sll(h, l));
+
+// sllb unfold rules - right side
+id : 33
+priority : core(3)
+right : sllb(?p, ?l) at 0
+action : right_erase(0);
+         right_exist_add(h);
+         right_exist_add(pt);
+         right_add(p != 0);
+         right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
+         right_add(sll(h, l));
+
+// sllb fold rules
+id : 34
+priority : fold_sllb(0)
+left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
+       data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), ?pt) at 1
+       sll(h, ?l) at 2
+       (p != NULL || NULL != p) at 3
+action : left_erase(0);
+         left_erase(1);
+         left_erase(2);
+         left_add(sllb(p, l));
+
+// map_mult rules
+id : 40
+priority : core(0)
+right : map_mult(?x, nil{Z}) == ?l at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 41
+priority : core(0)
+left : map_mult(?x, nil{Z}) == ?l at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 42
+priority : core(0)
+right : sllseg(?p, p, map_mult(?x, ?l)) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+// app rules
+id : 50
+priority : core(0)
+right : app{Z}(nil{Z}, ?l) == ?r at 0
+action : right_erase(0);
+         right_add(l == r);
+
+id : 51
+priority : core(0)
+left : app{Z}(nil{Z}, ?l) == ?r at 0
+action : left_erase(0);
+         left_add(l == r);
+
+id : 52
+priority : core(0)
+right : ?l == app{Z}(nil{Z}, ?r) at 0
+action : right_erase(0);
+         right_add(l == r);
+
+// cons rules
+id : 60
+priority : core(0)
+right : cons{Z}(?x1, ?l1) == cons{Z}(?x2, ?l2) at 0
+action : right_erase(0);
+         right_add(x1 == x2);
+         right_add(l1 == l2);
+
+id : 61
+priority : core(0)
+left : cons{Z}(?x1, ?l1) == cons{Z}(?x2, ?l2) at 0
+action : left_erase(0);
+         left_add(x1 == x2);
+         left_add(l1 == l2);
