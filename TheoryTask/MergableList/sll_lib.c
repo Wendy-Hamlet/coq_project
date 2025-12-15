@@ -1,8 +1,9 @@
 #include "sll_lib.h"
 
 struct sll * nil_list()
-/*@ Require 
-    Ensure  */
+/*@ Require emp
+    Ensure  sll(ret, nil)
+*/
 {
     return (struct sll *) 0;
 }
