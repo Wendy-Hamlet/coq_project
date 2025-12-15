@@ -1,6 +1,6 @@
-[submodule "sets"]
+[submodule "TheoryTask/sets"]
 	path = TheoryTask/sets
 	url = https://bitbucket.org/qinxiang-SJTU/sets.git
-[submodule "compcert_lib"]
-	path = TheoryTask/compcert_lib
+[submodule "TheoryTask/comcert_lib"]
+	path = TheoryTask/comcert_lib
 	url = https://bitbucket.org/WxWyashen/compcert_lib.git
