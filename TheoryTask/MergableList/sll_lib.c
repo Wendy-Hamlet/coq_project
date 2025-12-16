@@ -21,7 +21,7 @@ struct sll * cons_list(unsigned int data, struct sll * next)
 /*@ With l
     Require sll(next, l)
     Ensure sll(__return, cons(data, l))
-*/ 
+*/
 {
     struct sll * node = new_list_node();
     node -> data = data;
@@ -192,12 +192,15 @@ unsigned int sll_length(struct sll * head)
 }
 
 unsigned int * new_uint_array(unsigned int n)
-/*@ Require emp Ensure emp */;
+/*@ With n0
+    Require n == n0 && emp
+    Ensure UIntArray::undef_ceil(__return, 0, n0)
+*/;
 
 unsigned int sll2array(struct sll * head, unsigned int ** out_array)
 /*@ With l
-    Require sll(head, l) && Zlength(l) <= 2147483647
-    Ensure sll(head@pre, l)
+    Require sll(head, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array, unsigned int *)
+    Ensure exists arr_ret, sll(head@pre, l) && data_at(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
     unsigned int len = sll_length(head);
@@ -207,14 +210,19 @@ unsigned int sll2array(struct sll * head, unsigned int ** out_array)
     /*@ Inv exists l1 l2,
             l == app(l1, l2) &&
             i == Zlength(l1) &&
-            sllseg(head@pre, p, l1) * sll(p, l2)
+            len == Zlength(l) &&
+            0 <= i && i <= len &&
+            sllseg(head@pre, p, l1) * sll(p, l2) *
+            UIntArray::ceil_shape(arr, 0, i) * UIntArray::undef_ceil(arr, i, len)
     */
     while (p) {
-        /*@ exists l2, p != 0 && sll(p, l2)
+        /*@ exists l1 l2, l == app(l1, l2) && p != 0 && i < len && sll(p, l2) *
+                sllseg(head@pre, p, l1) * UIntArray::ceil_shape(arr, 0, i) * UIntArray::undef_ceil(arr, i, len)
             which implies
-            exists l3, l2 == cons(p -> data, l3) && sll(p -> next, l3)
+            exists l3, l2 == cons(p -> data, l3) && i < len && sll(p -> next, l3) *
+                sllseg(head@pre, p, l1) * UIntArray::ceil_shape(arr, 0, i) * UIntArray::undef_ceil(arr, i, len)
         */
-        *(arr + i) = p -> data;
+        arr[i] = p -> data;
         i = i + 1;
         p = p -> next;
     }
@@ -224,8 +232,8 @@ unsigned int sll2array(struct sll * head, unsigned int ** out_array)
 
 unsigned int sllb2array(struct sllb * box, unsigned int ** out_array)
 /*@ With l
-    Require sllb(box, l) && Zlength(l) <= 2147483647
-    Ensure sllb(box@pre, l)
+    Require sllb(box, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array, unsigned int *)
+    Ensure exists arr_ret, sllb(box@pre, l) && data_at(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
     /*@ sllb(box, l)
