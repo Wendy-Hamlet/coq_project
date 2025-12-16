@@ -156,7 +156,7 @@ struct sllb * app_list_box(struct sllb * b1, struct sllb * b2)
     /*@ sllb(b1, l1) * sllb(b2, l2)
         which implies
         exists h1 pt1 h2 pt2,
-            b1 -> head == h1 && b1 -> ptail == pt1 && sllbseg(&(b1 -> head), pt1, l1) * data_at(pt1, struct sll *, 0) &&
+            b1 -> head == h1 && b1 -> ptail == pt1 && sllbseg(&(b1 -> head), pt1, l1) * store(pt1, struct sll *, 0) &&
             b2 -> head == h2 && b2 -> ptail == pt2 && sll(h2, l2)
     */
     * (b1 -> ptail) = b2 -> head;
@@ -200,7 +200,7 @@ unsigned int * new_uint_array(unsigned int n)
 unsigned int sll2array(struct sll * head, unsigned int ** out_array)
 /*@ With l
     Require sll(head, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array, unsigned int *)
-    Ensure exists arr_ret, sll(head@pre, l) && data_at(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
+    Ensure exists arr_ret, sll(head@pre, l) && store(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
     unsigned int len = sll_length(head);
@@ -233,7 +233,7 @@ unsigned int sll2array(struct sll * head, unsigned int ** out_array)
 unsigned int sllb2array(struct sllb * box, unsigned int ** out_array)
 /*@ With l
     Require sllb(box, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array, unsigned int *)
-    Ensure exists arr_ret, sllb(box@pre, l) && data_at(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
+    Ensure exists arr_ret, sllb(box@pre, l) && store(out_array@pre, unsigned int *, arr_ret) && UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
     /*@ sllb(box, l)
