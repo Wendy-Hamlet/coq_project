@@ -37,7 +37,9 @@ PL_FILE_NAMES = \
 PL_FILES=$(PL_FILE_NAMES:%.v=$(PL_DIR)/%.v)
 
 ASSIGNMENT_FILE_NAMES = \
-	sll_project_lib.v
+	sll_project_lib.v \
+	sll_project_strategy_goal.v sll_project_strategy_proof.v \
+	sll_project_goal.v sll_project_proof_auto.v sll_project_proof_manual.v sll_project_goal_check.v 
 ASSIGNMENT_FILES=$(ASSIGNMENT_FILE_NAMES:%.v=$(ASSIGNMENT_DIR)/%.v)
 
 FILES = $(PL_FILES) \

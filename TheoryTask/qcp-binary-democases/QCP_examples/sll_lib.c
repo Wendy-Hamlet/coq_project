@@ -1,5 +1,5 @@
-#include "../qcp-binary-democases/QCP_examples/verification_stdlib.h"
-#include "../qcp-binary-democases/QCP_examples/verification_list.h"
+#include "verification_stdlib.h"
+#include "verification_list.h"
 #include "sll_project_def.h"
 
 struct sll * nil_list()
@@ -9,9 +9,9 @@ struct sll * nil_list()
 {
     return (struct sll *) 0;
 }
-
-struct sll * new_list_node()
-/*@ Require emp
+    
+    struct sll * new_list_node()
+    /*@ Require emp
     Ensure __return != 0 &&
            store(&(__return -> data), 0) *
            store(&(__return -> next), 0)

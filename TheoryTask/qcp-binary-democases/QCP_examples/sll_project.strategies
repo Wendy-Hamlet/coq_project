@@ -1,6 +1,10 @@
 //strategies for sll, sllb and UIntArray verification
 //max rule id: 93
 
+#include "sll_project_def.h"
+#include "verification_list.h"
+#include "verification_stdlib.h"
+
 // sll rules - basic
 id : 3
 priority : core(0)

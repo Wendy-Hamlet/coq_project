@@ -83,14 +83,15 @@ Examples_Lib_FILES = \
 	sll_queue_lib.v simple_arith/Apos_lib.v simple_arith/PDiv_lib.v bst_lib.v bst_fp_lib.v swap_lib.v \
 	eval_lib.v   avl_shape.v sll_shape_lib.v dll_shape_lib.v \
 	sll_merge_rel_lib.v kmp_lib.v kmp_rel_lib.v int_array_merge_rel_lib.v \
-	malloc.v super_poly_sll2.v  
+	malloc.v super_poly_sll2.v sll_project_lib.v
 
 Examples_FILE_NAME = \
 	poly_sll sll  sll_insert_sort functional_queue   simple_arith/abs \
 	simple_arith/add  simple_arith/gcd simple_arith/Always_pos simple_arith/div_test \
 	simple_arith/exgcd sum bst_insert bst_insert_rec bst_fp_delete swap eval bst_delete_rec \
 	bst_delete_rec2  avl_insert sll_auto dll_auto array_auto chars \
-	kmp_rel int_array_merge_rel sll_merge_rel sll_split_while 
+	kmp_rel int_array_merge_rel sll_merge_rel sll_split_while \
+	sll_project
 
 Examples_FILES = \
 	$(addsuffix _goal.v, $(Examples_FILE_NAME)) \
@@ -101,7 +102,8 @@ Examples_FILES = \
 
 Strategy_FILE_NAME = \
 	common poly_sll sll_shape sll dll_queue functional_queue sll_queue int_array undef_uint_array\
-	 uint_array array_shape bst bst_fp eval char_array  avl dll_shape safeexec safeexecE
+	uint_array array_shape bst bst_fp eval char_array  avl dll_shape safeexec safeexecE\
+	sll_project
   
 StrategyProof_FILES = \
 	$(addsuffix _strategy_goal.v, $(Strategy_FILE_NAME)) \
