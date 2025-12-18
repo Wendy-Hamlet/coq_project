@@ -22,9 +22,6 @@ Local Open Scope sac.
 Lemma proof_of_cons_list_return_wit_1 : cons_list_return_wit_1.
 Proof. Admitted. 
 
-Lemma proof_of_free_list_entail_wit_2 : free_list_entail_wit_2.
-Proof. Admitted. 
-
 Lemma proof_of_free_list_return_wit_1 : free_list_return_wit_1.
 Proof. Admitted. 
 

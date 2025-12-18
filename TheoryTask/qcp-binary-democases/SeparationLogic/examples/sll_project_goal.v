@@ -70,9 +70,7 @@ Definition free_list_entail_wit_2 :=
 forall (head: Z) (l_rest_2: (@list Z)) (head_next: Z) (head_data: Z) (l_rest_new: (@list Z)) ,
   [| (l_rest_2 = (cons (head_data) (l_rest_new))) |] 
   &&  [| (head <> 0) |]
-  &&  ((&((head)  # "sll" ->ₛ "data")) # UInt  |-> head_data)
-  **  ((&((head)  # "sll" ->ₛ "next")) # Ptr  |-> head_next)
-  **  (sll head_next l_rest_new )
+  &&  (sll head_next l_rest_new )
 |--
   EX (l_rest: (@list Z)) ,
   (sll head_next l_rest )
@@ -438,7 +436,9 @@ forall (l: (@list Z)) (box: Z) ,
 
 Definition app_list_box_safety_wit_1 := 
 forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  ((( &( "b1" ) )) # Ptr  |-> b1_pre)
+  ((( &( "pt2" ) )) # Ptr  |-> pt2)
+  **  ((( &( "h2" ) )) # Ptr  |-> h2)
+  **  ((( &( "b1" ) )) # Ptr  |-> b1_pre)
   **  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
   **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  ((( &( "b2" ) )) # Ptr  |-> b2_pre)

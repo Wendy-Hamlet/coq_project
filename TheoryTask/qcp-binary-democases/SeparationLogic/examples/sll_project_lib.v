@@ -426,3 +426,19 @@ Proof.
   entailer!.
 Qed.
 
+(* sll_not_null_length: when pointer is not null, list is non-empty *)
+Lemma sll_not_null_length: forall p l,
+  p <> NULL ->
+  sll p l |-- [| Zlength l >= 1 |].
+Proof.
+  intros.
+  destruct l.
+  - (* nil case: sll p nil => p = NULL, but p <> NULL, contradiction *)
+    simpl sll. Intros. contradiction.
+  - (* cons case: Zlength (z::l) >= 1 is obvious *)
+    simpl sll. Intros.
+    entailer!.
+    rewrite Zlength_cons.
+    pose proof Zlength_nonneg l. lia.
+Qed.
+

@@ -31,6 +31,9 @@ Proof. Admitted.
 Lemma proof_of_free_list_entail_wit_1 : free_list_entail_wit_1.
 Proof. Admitted. 
 
+Lemma proof_of_free_list_entail_wit_2 : free_list_entail_wit_2.
+Proof. Admitted. 
+
 Lemma proof_of_free_list_partial_solve_wit_1_pure : free_list_partial_solve_wit_1_pure.
 Proof. Admitted. 
 
