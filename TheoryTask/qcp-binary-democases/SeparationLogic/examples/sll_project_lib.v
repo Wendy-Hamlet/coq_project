@@ -26,7 +26,7 @@ Fixpoint sll (x: addr) (l: list Z): Assertion :=
     | nil     => [| x = NULL |] && emp
     | a :: l0 => [| x <> NULL |] && 
                  EX y: addr,
-                   &(x # "sll" ->ₛ "data") # Int |-> a **
+                   &(x # "sll" ->ₛ "data") # UInt |-> a **
                    &(x # "sll" ->ₛ "next") # Ptr |-> y **
                    sll y l0
   end.
@@ -36,7 +36,7 @@ Fixpoint sllseg (x y: addr) (l: list Z): Assertion :=
     | nil     => [| x = y |] && emp
     | a :: l0 => [| x <> NULL |] && 
                  EX z: addr,
-                   &(x # "sll" ->ₛ "data") # Int |-> a **
+                   &(x # "sll" ->ₛ "data") # UInt |-> a **
                    &(x # "sll" ->ₛ "next") # Ptr |-> z **
                    sllseg z y l0
   end.
@@ -51,7 +51,7 @@ Fixpoint sllbseg (x y: addr) (l: list Z): Assertion :=
     | a :: l0 => EX z: addr,
                    [| z <> NULL |] &&
                    x # Ptr |-> z **
-                   &(z # "sll" ->ₛ "data") # Int |-> a **
+                   &(z # "sll" ->ₛ "data") # UInt |-> a **
                    sllbseg (&(z # "sll" ->ₛ "next")) y l0
   end.
 
@@ -91,7 +91,7 @@ Lemma sll_not_zero: forall x l,
   sll x l |--
     EX y a l0,
       [| l = a :: l0 |] &&
-      &(x # "sll" ->ₛ "data") # Int |-> a **
+      &(x # "sll" ->ₛ "data") # UInt |-> a **
       &(x # "sll" ->ₛ "next") # Ptr |-> y **
       sll y l0.
 Proof.
@@ -123,7 +123,7 @@ Qed.
 
 Lemma sllseg_len1: forall x a y,
   x <> NULL ->
-  &(x # "sll" ->ₛ "data") # Int |-> a **
+  &(x # "sll" ->ₛ "data") # UInt |-> a **
   &(x # "sll" ->ₛ "next") # Ptr |-> y |--
   sllseg x y [a].
 Proof.
@@ -183,7 +183,7 @@ Qed.
 Lemma sllbseg_len1: forall (x y: addr) (a: Z),
   y <> 0 ->
   x # Ptr |-> y **
-  &( y # "sll" ->ₛ "data") # Int |-> a |--
+  &( y # "sll" ->ₛ "data") # UInt |-> a |--
   sllbseg x (&( y # "sll" ->ₛ "next")) [a].
 Proof.
   intros.
@@ -259,7 +259,7 @@ Lemma sllb_not_zero: forall x a l,
     [| head_val <> NULL |] &&
     &(x # "sllb" ->ₛ "head") # Ptr |-> head_val **
     &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
-    &(head_val # "sll" ->ₛ "data") # Int |-> a **
+    &(head_val # "sll" ->ₛ "data") # UInt |-> a **
     sllbseg (&(head_val # "sll" ->ₛ "next")) ptail_val l **
     ptail_val # Ptr |-> NULL.
 Proof.
@@ -382,6 +382,47 @@ Proof.
   Intros y'.
   Exists y'.
   sep_apply sllseg_sll.
+  entailer!.
+Qed.
+
+(* sll_2_sllbseg: convert sll to sllbseg form, recovering the tail pointer *)
+Lemma sll_2_sllbseg: forall x h l,
+  x # Ptr |-> h ** sll h l |--
+  EX pt: addr, sllbseg x pt l ** pt # Ptr |-> NULL.
+Proof.
+  intros.
+  revert x h; induction l; simpl; intros.
+  + (* nil case *)
+    Intros.
+    subst h.
+    Exists x.
+    simpl sllbseg.
+    entailer!.
+  + (* cons case *)
+    Intros.
+    Intros next.
+    sep_apply (IHl (&(h # "sll" ->ₛ "next")) next).
+    Intros pt.
+    Exists pt.
+    simpl sllbseg.
+    Exists h.
+    entailer!.
+Qed.
+
+(* sll_2_sllb: construct sllb from sll representation
+   Note: This requires consuming the old ptail and creating a new one *)
+Lemma sll_2_sllb: forall x h l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+  sll h l |--
+  EX ptail_new: addr,
+    sllbseg (&(x # "sllb" ->ₛ "head")) ptail_new l **
+    ptail_new # Ptr |-> NULL.
+Proof.
+  intros.
+  sep_apply (sll_2_sllbseg (&(x # "sllb" ->ₛ "head")) h l).
+  Intros pt_new.
+  Exists pt_new.
   entailer!.
 Qed.
 

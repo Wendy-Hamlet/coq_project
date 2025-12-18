@@ -36,9 +36,34 @@ struct sllb {
 | 空列表 `nil` | `NULL` | `&head` | `ptail_val = &head`，`*ptail = head = NULL` |
 | 非空列表 `a::l` | 第一个节点 | 最后节点的 `&next` | `*ptail = NULL`（链表终止） |
 
-## 2. 引理总览
+## 2. 重要的类型说明
 
-### 2.1 展开类引理（从 sllb 推导信息）
+### ⚠️ UInt vs Int
+
+由于 C 代码中 `struct sll` 的 `data` 字段是 `unsigned int` 类型：
+
+```c
+struct sll {
+    unsigned int data;  // 注意是 unsigned int
+    struct sll * next;
+};
+```
+
+所有谓词定义中必须使用 **`UInt`** 而非 `Int`：
+
+```coq
+(* 正确 *)
+&(x # "sll" ->ₛ "data") # UInt |-> a
+
+(* 错误 - 会导致类型不匹配 *)
+&(x # "sll" ->ₛ "data") # Int |-> a
+```
+
+验证工具会根据 C 代码自动推断类型。如果 Coq 谓词中的类型与 C 代码不一致，会导致验证目标无法匹配。
+
+## 3. 引理总览
+
+### 3.1 展开类引理（从 sllb 推导信息）
 
 | 引理 | 作用 |
 |-----|-----|
@@ -47,24 +72,26 @@ struct sllb {
 | `sllb_2_sllbseg` | 转换为 sllbseg 表示（直接从定义） |
 | `sllb_2_sll` | 转换为 sll 表示 |
 
-### 2.2 折叠类引理（构造 sllb）
+### 3.2 折叠类引理（构造 sllb）
 
 | 引理 | 作用 |
 |-----|-----|
 | `sllb_len1` | 从空列表的字段值构造 sllb |
 | `sllbseg_2_sllb` | 从 sllbseg 结构构造 sllb |
 
-### 2.3 转换类引理（谓词间转换）
+### 3.3 转换类引理（谓词间转换）
 
 | 引理 | 作用 |
 |-----|-----|
 | `sllbseg_0_sll'` | `sllbseg + *y=NULL` → `sll` |
 | `sllbseg_sll` | `sllbseg + sll` 拼接 |
 | `sllbseg_sll'` | `sllbseg + *y=0 + sll 0` 特殊情况 |
+| `sll_2_sllbseg` | `sll` → `sllbseg + *ptail=NULL`（**新增**）|
+| `sll_2_sllb` | 辅助引理，用于 sll 到 sllbseg 转换 |
 
-## 3. 引理详解
+## 4. 引理详解
 
-### 3.1 `sllb_zero`
+### 4.1 `sllb_zero`
 
 ```coq
 Lemma sllb_zero: forall x,
@@ -80,7 +107,7 @@ Lemma sllb_zero: forall x,
 
 **用途**：验证 `nil_list_box` 返回后的状态。
 
-### 3.2 `sllb_not_zero`
+### 4.2 `sllb_not_zero`
 
 ```coq
 Lemma sllb_not_zero: forall x a l,
@@ -90,7 +117,7 @@ Lemma sllb_not_zero: forall x a l,
     [| head_val <> NULL |] &&
     &(x # "sllb" ->ₛ "head") # Ptr |-> head_val **
     &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
-    &(head_val # "sll" ->ₛ "data") # Int |-> a **
+    &(head_val # "sll" ->ₛ "data") # UInt |-> a **
     sllbseg (&(head_val # "sll" ->ₛ "next")) ptail_val l **
     ptail_val # Ptr |-> NULL.
 ```
@@ -103,7 +130,7 @@ Lemma sllb_not_zero: forall x a l,
 
 **用途**：验证需要访问第一个元素的操作，如 `cons_list_box`。
 
-### 3.3 `sllb_2_sllbseg`
+### 4.3 `sllb_2_sllbseg`
 
 ```coq
 Lemma sllb_2_sllbseg: forall x l,
@@ -119,7 +146,7 @@ Lemma sllb_2_sllbseg: forall x l,
 
 **用途**：`app_list_box` 需要访问 `*ptail` 来连接两个链表。
 
-### 3.4 `sllb_2_sll`
+### 4.4 `sllb_2_sll`
 
 ```coq
 Lemma sllb_2_sll: forall x l,
@@ -135,7 +162,9 @@ Lemma sllb_2_sll: forall x l,
 
 **用途**：当只需要读取/遍历链表而不需要修改 `*ptail` 时使用，如 `map_list_box`、`free_list_box`。
 
-### 3.5 `sllbseg_2_sllb`
+⚠️ **注意**：这个转换**消耗**了 `*ptail = NULL` 的权限（将其合并到 `sll` 中）。
+
+### 4.5 `sllbseg_2_sllb`
 
 ```coq
 Lemma sllbseg_2_sllb: forall x ptail_val l,
@@ -152,7 +181,67 @@ Lemma sllbseg_2_sllb: forall x ptail_val l,
 
 **用途**：在修改操作完成后，重新构造 `sllb` 谓词。
 
-## 4. 使用示例
+### 4.6 `sll_2_sllbseg`（新增）
+
+```coq
+Lemma sll_2_sllbseg: forall x h l,
+  x # Ptr |-> h ** sll h l |--
+  EX pt: addr, sllbseg x pt l ** pt # Ptr |-> NULL.
+```
+
+**含义**：将 `x |-> h ** sll h l` 转换为 `sllbseg x pt l ** pt |-> NULL`。
+
+**用途**：当从 `sll` 形式恢复到 `sllbseg` 形式时使用。例如，`cons_list_box` 调用 `cons_list` 后需要将结果折叠回 `sllb`。
+
+### 4.7 `sll_2_sllb`
+
+```coq
+Lemma sll_2_sllb: forall x h l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h ** sll h l |--
+  EX ptail_new: addr,
+    sllbseg (&(x # "sllb" ->ₛ "head")) ptail_new l **
+    ptail_new # Ptr |-> NULL.
+```
+
+**含义**：辅助引理，结合 `sll_2_sllbseg` 使用。
+
+## 5. C 代码中的 which implies 断言
+
+### 5.1 断言语法规则
+
+在 C 代码的 `which implies` 断言中：
+- **纯命题**用 `&&` 连接
+- **分离逻辑断言**用 `*` 连接
+- 纯命题必须在分离逻辑断言之前
+
+```c
+/* 正确 */
+exists h pt,
+    box->head == h && box->ptail == pt &&  // 纯命题
+    sll(h, l)                               // 分离逻辑
+
+/* 错误 - 混合使用 */
+exists h pt,
+    box->head == h && sll(h, l) * box->ptail == pt
+```
+
+### 5.2 各函数的断言设计
+
+| 函数 | 展开形式 | 原因 |
+|------|---------|------|
+| `cons_list_box` | `sll` | 需要调用 `cons_list` |
+| `map_list_box` | `sll` | 需要调用 `map_list` |
+| `free_list_box` | `sll` | 需要调用 `free_list` |
+| `sllb2array` | `sll` | 需要调用 `sll2array` |
+| `app_list_box` | `sllbseg` | 需要写 `*(b1->ptail)` |
+| `nil_list_box` | `sll(0, nil)` | 从空状态构造 |
+
+### 5.3 资源守恒问题
+
+当使用 `sllb_2_sll` 展开时，`*ptail = NULL` 的资源被吸收到 `sll` 中。返回时需要使用 `sll_2_sllbseg` 恢复。
+
+## 6. 使用示例
 
 ### 示例 1：验证 `nil_list_box`
 
@@ -176,9 +265,13 @@ sep_apply sllb_2_sllbseg.  (* 展开为 sllbseg + *ptail=NULL *)
 (* 只需要遍历链表，不需要修改 *ptail *)
 sep_apply sllb_2_sll.  (* 转换为 sll 表示 *)
 (* 调用 map_list(box->head, x) *)
+
+(* 返回时需要折叠回 sllb *)
+sep_apply sll_2_sllbseg.  (* sll → sllbseg + *pt=NULL *)
+(* 然后使用 sllbseg_2_sllb 完成折叠 *)
 ```
 
-## 5. 命名规范
+## 7. 命名规范
 
 遵循课程 `sll_lib.v` 的命名风格：
 
@@ -191,7 +284,7 @@ sep_apply sllb_2_sll.  (* 转换为 sll 表示 *)
 | `xxx_yyy` | xxx 与 yyy 的组合 | `sllbseg_sll` |
 | `xxx'` | 变体版本 | `sllbseg_0_sll'` |
 
-## 6. 与课程引理的对应关系
+## 8. 与课程引理的对应关系
 
 | 课程引理 (sll) | 本项目引理 (sllb) |
 |--------------|------------------|
@@ -201,4 +294,21 @@ sep_apply sllb_2_sll.  (* 转换为 sll 表示 *)
 | `sllbseg_2_sllseg` | `sllb_2_sllbseg` |
 | `sllseg_0_sll` | `sllbseg_0_sll'` |
 | `sllseg_sll` | `sllbseg_sll` |
+| - | `sll_2_sllbseg`（新增）|
 
+## 9. 常见问题
+
+### Q1: 为什么验证报 "Cannot unify types Assertion and Z"？
+
+通常是 `which implies` 断言中 `&&` 和 `*` 的使用不正确。确保纯命题在前，分离逻辑断言在后。
+
+### Q2: 为什么谓词不匹配？
+
+检查 `Int` vs `UInt` 类型是否正确。C 代码中 `unsigned int` 对应 `UInt`，`int` 对应 `Int`。
+
+### Q3: 折叠回 `sllb` 失败？
+
+确保有完整的资源：
+- `&ptail |-> ptail_val`
+- `sllbseg(&head, ptail_val, l)`
+- `ptail_val |-> NULL`
