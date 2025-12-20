@@ -81,13 +81,13 @@ Definition sllb (x: addr) (l: list Z): Assertion :=
 (* ============================================================ *)
 
 Definition map_mult (x: Z) (l: list Z): list Z :=
-  List.map (fun a => x * a) l.
+  List.map (fun a => unsigned_last_nbits (x * a) 32) l.
 
 Lemma map_mult_nil: forall x, map_mult x nil = nil.
 Proof. reflexivity. Qed.
 
 Lemma map_mult_cons: forall x a l,
-  map_mult x (a :: l) = (x * a) :: map_mult x l.
+  map_mult x (a :: l) = (unsigned_last_nbits (x * a) 32) :: map_mult x l.
 Proof. reflexivity. Qed.
 
 (* ============================================================ *)
