@@ -15,8 +15,8 @@ Local Open Scope Z_scope.
 Local Open Scope sets.
 Local Open Scope string.
 Local Open Scope list.
-Import naive_C_Rules.
 Require Import sll_project_lib.
+Import naive_C_Rules.
 Local Open Scope sac.
 
 Lemma proof_of_cons_list_return_wit_1 : cons_list_return_wit_1.
@@ -40,13 +40,11 @@ Lemma proof_of_free_list_which_implies_wit_1 : free_list_which_implies_wit_1.
 Proof.
   pre_process.
   destruct l_rest as [ | a l0].
-  - (* l_rest = nil, sll head nil means head = 0, contradicts H : head <> 0 *)
+  - (* l_rest = nil, contradiction *)
     simpl sll.
     Intros.
-    (* Now we have head = 0 from sll, but H says head <> 0 *)
     tauto.
-  - (* l_rest = a :: l0 *)
-    simpl sll.
+  - simpl sll.
     Intros.
     Intros y.
     Exists y a l0.
@@ -60,7 +58,6 @@ Proof.
   simpl.
   entailer!.
 Qed. 
-
 Lemma proof_of_map_list_entail_wit_2 : map_list_entail_wit_2.
 Proof.
   pre_process.
@@ -69,7 +66,7 @@ Proof.
   - sep_apply sllseg_len1; try easy.
     rewrite logic_equiv_sepcon_comm.
     sep_apply sllseg_sllseg.
-    assert (H_eq: map_mult x (l1_2 ++ p_data :: nil) = map_mult x l1_2 ++ unsigned_last_nbits (x * p_data) 32 :: nil).
+    assert (H_eq: map_mult x_pre (l1_2 ++ p_data :: nil) = map_mult x_pre l1_2 ++ unsigned_last_nbits (x_pre * p_data) 32 :: nil).
     {
       unfold map_mult.
       rewrite map_app.
@@ -86,8 +83,16 @@ Qed.
 
 Lemma proof_of_map_list_return_wit_1 : map_list_return_wit_1.
 Proof.
-  (* Missing loop invariant: head = head_pre && x = x_pre *)
-  Admitted. 
+  pre_process.
+  subst p.
+  sep_apply sll_zero; try tauto.
+  Intros.
+  subst l2.
+  sep_apply sllseg_0_sll.
+  rewrite app_nil_r in H0.
+  subst l.
+  entailer!.
+Qed.
 
 Lemma proof_of_map_list_which_implies_wit_1 : map_list_which_implies_wit_1.
 Proof.
@@ -103,45 +108,6 @@ Proof.
     entailer!.
 Qed.
 
-Lemma proof_of_nil_list_box_which_implies_wit_1 : nil_list_box_which_implies_wit_1.
-Proof.
-  pre_process.
-  subst box_head box_ptail.
-  sep_apply sll_zero.
-  rewrite H.
-  sep_apply sllb_len1; try tauto.
-  - entailer!. 
-Admitted.
-(* Missing precondition: box != 0 in the C code annotation *)
-Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
-Proof.
-  (* pre_process.
-  subst pt.
-  simpl sll.
-  Intros.
-  Intros next.
-  sep_apply (sll_2_sllb box_pre retval (data_pre :: l)).
-  - tauto.
-  - simpl sll. Exists next. entailer!. *)
-   (* Missing precondition: box_pre <> NULL *)
-Admitted.
-
-Lemma proof_of_cons_list_box_return_wit_2 : cons_list_box_return_wit_2.
-Proof.
-  (* pre_process.
-  simpl sll.
-  Intros.
-  Intros next.
-  sep_apply (sll_2_sllb box_pre retval (data_pre :: l)).
-  - tauto.
-  - simpl sll. Exists next. entailer!.
-  *)
-  (* Missing precondition: box_pre <> NULL *)
-Admitted.
-
-Lemma proof_of_map_list_box_return_wit_1 : map_list_box_return_wit_1.
-Proof. Admitted. 
-
 Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
 Proof. Admitted. 
 
@@ -152,16 +118,66 @@ Lemma proof_of_app_list_box_which_implies_wit_1 : app_list_box_which_implies_wit
 Proof. Admitted. 
 
 Lemma proof_of_sll_length_entail_wit_1 : sll_length_entail_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists nil l.
+  simpl.
+  entailer!.
+Qed. 
 
 Lemma proof_of_sll_length_entail_wit_2 : sll_length_entail_wit_2.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists (l1_2 ++ (head_data :: nil)) l3.
+  simpl.
+  entailer!.
+  sep_apply sllseg_len1.
+  - rewrite logic_equiv_sepcon_comm.
+    sep_apply sllseg_sllseg.
+    entailer!.
+  - entailer!.
+  - (* Arithmetic *)
+    rewrite Zlength_app.
+    rewrite Zlength_cons, Zlength_nil.
+    rewrite <- H2.
+    apply unsigned_last_nbits_eq.
+    rewrite H1, H in H3.
+    rewrite Zlength_app, Zlength_cons in H3.
+    pose proof (Zlength_nonneg l1_2).
+    rewrite <- H2 in H4.
+    pose proof (Zlength_nonneg l3).
+    lia.
+  - rewrite H1, H.
+    rewrite <- app_assoc.
+    simpl.
+    reflexivity.
+Qed. 
 
 Lemma proof_of_sll_length_return_wit_1 : sll_length_return_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  rewrite H.
+  sep_apply sll_zero.
+  subst l.
+  entailer!.
+  - rewrite H0, app_nil_r.
+    sep_apply sllseg_0_sll.
+    entailer!.
+  - rewrite H0, app_nil_r.
+    assumption.
+  - reflexivity.
+Qed. 
 
 Lemma proof_of_sll_length_which_implies_wit_1 : sll_length_which_implies_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  destruct l2 as [ | a l0].
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros.
+    Intros x.
+    Exists x a l0.
+    entailer!.
+Qed. 
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
 Proof. Admitted. 

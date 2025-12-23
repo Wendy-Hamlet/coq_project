@@ -15,8 +15,8 @@ Local Open Scope Z_scope.
 Local Open Scope sets.
 Local Open Scope string.
 Local Open Scope list.
-Import naive_C_Rules.
 Require Import sll_project_lib.
+Import naive_C_Rules.
 Local Open Scope sac.
 
 Lemma proof_of_nil_list_safety_wit_1 : nil_list_safety_wit_1.
@@ -67,6 +67,15 @@ Proof. Admitted.
 Lemma proof_of_nil_list_box_partial_solve_wit_3 : nil_list_box_partial_solve_wit_3.
 Proof. Admitted. 
 
+Lemma proof_of_nil_list_box_which_implies_wit_1 : nil_list_box_which_implies_wit_1.
+Proof. Admitted. 
+
+Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
+Proof. Admitted. 
+
+Lemma proof_of_cons_list_box_return_wit_2 : cons_list_box_return_wit_2.
+Proof. Admitted. 
+
 Lemma proof_of_cons_list_box_partial_solve_wit_1 : cons_list_box_partial_solve_wit_1.
 Proof. Admitted. 
 
@@ -74,6 +83,9 @@ Lemma proof_of_cons_list_box_partial_solve_wit_2 : cons_list_box_partial_solve_w
 Proof. Admitted. 
 
 Lemma proof_of_cons_list_box_which_implies_wit_1 : cons_list_box_which_implies_wit_1.
+Proof. Admitted. 
+
+Lemma proof_of_map_list_box_return_wit_1 : map_list_box_return_wit_1.
 Proof. Admitted. 
 
 Lemma proof_of_map_list_box_partial_solve_wit_1 : map_list_box_partial_solve_wit_1.
