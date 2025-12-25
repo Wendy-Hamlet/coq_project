@@ -17,10 +17,10 @@ Local Open Scope list.
 Require Import sll_project_lib.
 Import naive_C_Rules.
 Local Open Scope sac.
-From SimpleC.EE Require Import sll_project_strategy_goal.
-From SimpleC.EE Require Import sll_project_strategy_proof.
-From SimpleC.EE Require Import common_strategy_goal.
-From SimpleC.EE Require Import common_strategy_proof.
+Require Import sll_project_strategy_goal.
+Require Import sll_project_strategy_proof.
+Require Import common_strategy_goal.
+Require Import common_strategy_proof.
 
 (*----- Function nil_list -----*)
 
@@ -447,46 +447,46 @@ forall (l: (@list Z)) (box: Z) ,
 (*----- Function app_list_box -----*)
 
 Definition app_list_box_safety_wit_1 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  ((( &( "pt2" ) )) # Ptr  |-> pt2)
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) ,
+  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
+  &&  ((( &( "pt2" ) )) # Ptr  |-> pt2)
   **  ((( &( "h2" ) )) # Ptr  |-> h2)
   **  ((( &( "b1" ) )) # Ptr  |-> b1_pre)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  ((( &( "b2" ) )) # Ptr  |-> b2_pre)
-  **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
-  **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
+  **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+  **  (sll h2 l2 )
 |--
   [| (0 <= INT_MAX) |] 
   &&  [| ((INT_MIN) <= 0) |]
 .
 
 Definition app_list_box_return_wit_1 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  [| (h2 = 0) |]
-  &&  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (h2: Z) (pt1: Z) ,
+  [| (h2 = 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
+  &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 |--
   (sllb b1_pre (app (l1) (l2)) )
 .
 
 Definition app_list_box_return_wit_2 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  [| (h2 <> 0) |]
-  &&  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) ,
+  [| (h2 <> 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
+  &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 |--
   (sllb b1_pre (app (l1) (l2)) )
 .
@@ -501,49 +501,49 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) ,
 .
 
 Definition app_list_box_partial_solve_wit_2 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  [| (h2 <> 0) |]
-  &&  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) ,
+  [| (h2 <> 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
+  &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+  **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
+  **  ((pt1) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
-  **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 |--
-  [| (h2 <> 0) |]
+  [| (h2 <> 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
   &&  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
   **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 .
 
 Definition app_list_box_partial_solve_wit_3 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) (h1: Z) ,
-  [| (h2 = 0) |]
-  &&  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) ,
+  [| (h2 = 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
+  &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
+  **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
+  **  ((pt1) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
-  **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 |--
-  [| (h2 = 0) |]
+  [| (h2 = 0) |] 
+  &&  [| (b1_pre <> 0) |] 
+  &&  [| (b2_pre <> 0) |]
   &&  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  ((&((b1_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
   **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sllbseg &((b2_pre)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  (sll h2 l2 )
 .
 
 Definition app_list_box_which_implies_wit_1 := 
@@ -551,15 +551,15 @@ forall (l2: (@list Z)) (l1: (@list Z)) (b1: Z) (b2: Z) ,
   (sllb b1 l1 )
   **  (sllb b2 l2 )
 |--
-  EX (pt2: Z)  (h2: Z)  (pt1: Z)  (h1: Z) ,
-  ((&((b1)  # "sllb" ->ₛ "head")) # Ptr  |-> h1)
-  **  ((&((b1)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
-  **  ((&((b2)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
-  **  ((&((b2)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+  EX (pt2: Z)  (h2: Z)  (pt1: Z) ,
+  [| (b1 <> 0) |] 
+  &&  [| (b2 <> 0) |]
+  &&  ((&((b1)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> 0)
-  **  (sllbseg &((b2)  # "sllb" ->ₛ "head") pt2 l2 )
-  **  ((pt2) # Ptr  |-> 0)
+  **  ((&((b2)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
+  **  ((&((b2)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
+  **  (sll h2 l2 )
 .
 
 (*----- Function sll_length -----*)

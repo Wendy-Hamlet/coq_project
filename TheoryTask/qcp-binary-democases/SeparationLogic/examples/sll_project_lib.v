@@ -392,26 +392,7 @@ Proof.
   Exists h1. entailer!.
 Qed.
 
-(* For app_list_box: when h2 = 0, update pt and keep l1 *)
-Lemma app_sllb_nil: forall x h pt l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  pt # Ptr |-> NULL **
-  sll h l |--
-  sllb x l.
-Proof.
-  intros.
-  unfold sllb.
-  sep_apply (sll_2_sllbseg (&(x # "sllb" ->ₛ "head")) h l).
-  Intros pt_new.
-  (* Need to show that pt = pt_new or handle resource *)
-  (* Actually, we need to discard the old pt and use pt_new *)
-  (* This requires pt = pt_new, which may not be true in general *)
-  (* Let's reconsider... *)
-Abort.
-
-(* Alternative: directly fold sllb from components *)
+(* Directly fold sllb from components *)
 Lemma sllbseg_store_2_sllb: forall x pt l,
   x <> NULL ->
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
@@ -420,4 +401,72 @@ Lemma sllbseg_store_2_sllb: forall x pt l,
   sllb x l.
 Proof.
   intros. unfold sllb. Exists pt. entailer!.
+Qed.
+
+(* For app_list_box: sllbseg + pt |-> h + sll h l2 => sllbseg of l1++l2 *)
+Lemma sllbseg_pt_sll: forall x pt l1 h l2,
+  sllbseg x pt l1 ** pt # Ptr |-> h ** sll h l2 |--
+  EX pt_new: addr, sllbseg x pt_new (l1 ++ l2) ** pt_new # Ptr |-> NULL.
+Proof.
+  intros.
+  sep_apply sllbseg_sll.
+  Intros head_val.
+  sep_apply (sll_2_sllbseg x head_val (l1 ++ l2)).
+  Intros pt_new.
+  Exists pt_new.
+  entailer!.
+Qed.
+
+(* For app_list_box return_wit_1: when h2 = 0 *)
+Lemma app_sllb_case_nil: forall x pt l1 l2,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  sllbseg (&(x # "sllb" ->ₛ "head")) pt l1 **
+  pt # Ptr |-> NULL **
+  sll NULL l2 |--
+  sllb x (l1 ++ l2).
+Proof.
+  intros.
+  assert (Hnil: NULL = NULL) by reflexivity.
+  sep_apply (sll_zero NULL l2 Hnil).
+  Intros. subst l2.
+  rewrite app_nil_r.
+  sep_apply (sllbseg_store_2_sllb x pt l1 H).
+  entailer!.
+Qed.
+
+(* For app_list_box return_wit_2: directly construct sllb using pt2 as final ptail *)
+(* Key insight: pt2 from sllb(b2, l2) IS the final ptail because sll(h2, l2)'s 
+   tail pointer position is exactly pt2. The sll_2_sllbseg gives the same pt. *)
+
+(* Direct folding into sllb when we have the right structure *)
+Lemma app_sllb_direct: forall x pt l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  sllbseg (&(x # "sllb" ->ₛ "head")) pt l **
+  pt # Ptr |-> NULL |--
+  sllb x l.
+Proof.
+  intros.
+  unfold sllb. Exists pt. entailer!.
+Qed.
+
+(* For return_wit_2: Connect l1 and l2 using sll, then fold to sllb *)
+(* This uses sllbseg_pt_sll which gives EX pt_final, and we need to use that pt_final *)
+Lemma app_sllb_via_sll: forall x pt2 pt1 l1 h2 l2,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
+  sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 **
+  pt1 # Ptr |-> h2 **
+  sll h2 l2 |--
+  EX pt_final: addr,
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
+    sllbseg (&(x # "sllb" ->ₛ "head")) pt_final (l1 ++ l2) **
+    pt_final # Ptr |-> NULL.
+Proof.
+  intros.
+  sep_apply (sllbseg_pt_sll (&(x # "sllb" ->ₛ "head")) pt1 l1 h2 l2).
+  Intros pt_final.
+  Exists pt_final.
+  entailer!.
 Qed.

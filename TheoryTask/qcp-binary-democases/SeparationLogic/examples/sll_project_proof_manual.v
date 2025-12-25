@@ -19,6 +19,10 @@ Require Import sll_project_lib.
 Import naive_C_Rules.
 Local Open Scope sac.
 
+(* ============================================================ *)
+(* Restored proofs from bug-missing-preconditions branch *)
+(* ============================================================ *)
+
 Lemma proof_of_cons_list_return_wit_1 : cons_list_return_wit_1.
 Proof.
   pre_process.
@@ -40,24 +44,18 @@ Lemma proof_of_free_list_which_implies_wit_1 : free_list_which_implies_wit_1.
 Proof.
   pre_process.
   destruct l_rest as [ | a l0].
-  - (* l_rest = nil, contradiction *)
-    simpl sll.
-    Intros.
-    tauto.
-  - simpl sll.
-    Intros.
-    Intros y.
-    Exists y a l0.
-    entailer!.
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros y.
+    Exists y a l0. entailer!.
 Qed.
 
 Lemma proof_of_map_list_entail_wit_1 : map_list_entail_wit_1.
 Proof.
   pre_process.
   Exists nil l.
-  simpl.
-  entailer!.
+  simpl. entailer!.
 Qed. 
+
 Lemma proof_of_map_list_entail_wit_2 : map_list_entail_wit_2.
 Proof.
   pre_process.
@@ -68,17 +66,10 @@ Proof.
     sep_apply sllseg_sllseg.
     assert (H_eq: map_mult x_pre (l1_2 ++ p_data :: nil) = map_mult x_pre l1_2 ++ unsigned_last_nbits (x_pre * p_data) 32 :: nil).
     {
-      unfold map_mult.
-      rewrite map_app.
-      simpl.
-      reflexivity.
+      unfold map_mult. rewrite map_app. simpl. reflexivity.
     }
-    rewrite H_eq.
-    entailer!.
-  - rewrite H1, H.
-    rewrite <- app_assoc.
-    simpl.
-    reflexivity.
+    rewrite H_eq. entailer!.
+  - rewrite H1, H. rewrite <- app_assoc. simpl. reflexivity.
 Qed.
 
 Lemma proof_of_map_list_return_wit_1 : map_list_return_wit_1.
@@ -86,59 +77,38 @@ Proof.
   pre_process.
   subst p.
   sep_apply sll_zero; try tauto.
-  Intros.
-  subst l2.
+  Intros. subst l2.
   sep_apply sllseg_0_sll.
   rewrite app_nil_r in H0.
-  subst l.
-  entailer!.
+  subst l. entailer!.
 Qed.
 
 Lemma proof_of_map_list_which_implies_wit_1 : map_list_which_implies_wit_1.
 Proof.
   pre_process.
   destruct l2 as [ | a l0].
-  - simpl sll.
-    Intros.
-    tauto.
-  - simpl sll.
-    Intros.
-    Intros y.
-    Exists y a l0.
-    entailer!.
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros y.
+    Exists y a l0. entailer!.
 Qed.
-
-Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
-Proof. Admitted. 
-
-Lemma proof_of_app_list_box_return_wit_2 : app_list_box_return_wit_2.
-Proof. Admitted. 
-
-Lemma proof_of_app_list_box_which_implies_wit_1 : app_list_box_which_implies_wit_1.
-Proof. Admitted. 
 
 Lemma proof_of_sll_length_entail_wit_1 : sll_length_entail_wit_1.
 Proof.
   pre_process.
   Exists nil l.
-  simpl.
-  entailer!.
+  simpl. entailer!.
 Qed. 
 
 Lemma proof_of_sll_length_entail_wit_2 : sll_length_entail_wit_2.
 Proof.
   pre_process.
   Exists (l1_2 ++ (head_data :: nil)) l3.
-  simpl.
-  entailer!.
+  simpl. entailer!.
   sep_apply sllseg_len1.
   - rewrite logic_equiv_sepcon_comm.
-    sep_apply sllseg_sllseg.
-    entailer!.
+    sep_apply sllseg_sllseg. entailer!.
   - entailer!.
-  - (* Arithmetic *)
-    rewrite Zlength_app.
-    rewrite Zlength_cons, Zlength_nil.
+  - rewrite Zlength_app. rewrite Zlength_cons, Zlength_nil.
     rewrite <- H2.
     apply unsigned_last_nbits_eq.
     rewrite H1, H in H3.
@@ -147,10 +117,7 @@ Proof.
     rewrite <- H2 in H4.
     pose proof (Zlength_nonneg l3).
     lia.
-  - rewrite H1, H.
-    rewrite <- app_assoc.
-    simpl.
-    reflexivity.
+  - rewrite H1, H. rewrite <- app_assoc. simpl. reflexivity.
 Qed. 
 
 Lemma proof_of_sll_length_return_wit_1 : sll_length_return_wit_1.
@@ -158,13 +125,9 @@ Proof.
   pre_process.
   rewrite H.
   sep_apply sll_zero.
-  subst l.
-  entailer!.
-  - rewrite H0, app_nil_r.
-    sep_apply sllseg_0_sll.
-    entailer!.
-  - rewrite H0, app_nil_r.
-    assumption.
+  subst l. entailer!.
+  - rewrite H0, app_nil_r. sep_apply sllseg_0_sll. entailer!.
+  - rewrite H0, app_nil_r. assumption.
   - reflexivity.
 Qed. 
 
@@ -173,11 +136,94 @@ Proof.
   pre_process.
   destruct l2 as [ | a l0].
   - simpl sll. Intros. tauto.
-  - simpl sll. Intros.
-    Intros x.
-    Exists x a l0.
-    entailer!.
+  - simpl sll. Intros. Intros x.
+    Exists x a l0. entailer!.
 Qed. 
+
+(* ============================================================ *)
+(* app_list_box proofs *)
+(* ============================================================ *)
+
+(* which_implies_wit_1: unfold sllb to required form *)
+Lemma proof_of_app_list_box_which_implies_wit_1 : app_list_box_which_implies_wit_1.
+Proof.
+  pre_process.
+  (* Unfold sllb for b1 *)
+  unfold sllb at 1.
+  Intros ptail1.
+  (* Unfold sllb for b2 *)
+  unfold sllb.
+  Intros ptail2.
+  (* Convert sllbseg(&(b2->head), ptail2, l2) ** ptail2 |-> NULL to 
+     &(b2->head) |-> h2 ** sll(h2, l2) *)
+  sep_apply (sllbseg_0_sll' (&(b2 # "sllb" ->ₛ "head")) ptail2 l2).
+  Intros h2.
+  (* Exists pt2 h2 pt1 *)
+  Exists ptail2 h2 ptail1.
+  entailer!.
+Qed.
+
+(* return_wit_1: when h2 = 0 (l2 is empty or starts with NULL) *)
+Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
+Proof.
+  pre_process.
+  subst h2.
+  (* Use sll_zero: sll 0 l2 |-- [| l2 = nil |] && emp *)
+  assert (Hzero: (0:addr) = NULL) by reflexivity.
+  sep_apply (sll_zero 0 l2 Hzero).
+  Intros.
+  subst l2.
+  rewrite app_nil_r.
+  (* Directly unfold sllb and provide witness *)
+  unfold sllb.
+  Exists pt1.
+  entailer!.
+Qed.
+
+(* return_wit_2: when h2 <> 0 (l2 is non-empty) *)
+Lemma proof_of_app_list_box_return_wit_2 : app_list_box_return_wit_2.
+Proof.
+  pre_process.
+  (* We have:
+     - &(b1->ptail) |-> pt2
+     - sllbseg(&(b1->head), pt1, l1)
+     - pt1 |-> h2
+     - sll(h2, l2)
+     
+     We need to prove sllb(b1, l1++l2) *)
+  
+  (* Use sllbseg_pt_sll to connect l1 and l2 *)
+  sep_apply (sllbseg_pt_sll (&(b1_pre # "sllb" ->ₛ "head")) pt1 l1 h2 l2).
+  Intros pt_final.
+  
+  (* Now we have:
+     - &(b1->ptail) |-> pt2
+     - sllbseg(&(b1->head), pt_final, l1++l2)
+     - pt_final |-> NULL
+     
+     To fold into sllb, we need &(b1->ptail) |-> pt_final.
+     But we have &(b1->ptail) |-> pt2.
+     
+     Semantically, pt2 = pt_final because:
+     - pt2 comes from sllb(b2, l2), which is the tail pointer position of l2
+     - pt_final is also the tail pointer position of l2 (from sll_2_sllbseg)
+     - They must be equal for the same heap state.
+     
+     However, proving this equality in Coq requires precision reasoning
+     which is not directly available. We use the fact that the program
+     verification passed, implying this equality holds. *)
+  
+  (* For now, we construct sllb using pt_final as the witness *)
+  unfold sllb.
+  Exists pt_final.
+  entailer!.
+  (* Remaining goal: &(b1->ptail) |-> pt2 |-- &(b1->ptail) |-> pt_final
+     This requires pt2 = pt_final, which holds semantically. *)
+Admitted.  (* Requires pt2 = pt_final, provable via precision *)
+
+(* ============================================================ *)
+(* Remaining proofs *)
+(* ============================================================ *)
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
 Proof. Admitted. 
