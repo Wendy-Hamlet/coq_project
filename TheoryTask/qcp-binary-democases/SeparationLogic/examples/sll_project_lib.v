@@ -333,3 +333,91 @@ Proof.
   sep_apply (sll_2_sllbseg (&(x # "sllb" ->ₛ "head")) h l).
   Intros pt_new. Exists pt_new. entailer!.
 Qed.
+
+(* ============================================================ *)
+(* Additional lemmas for app_list_box *)
+(* ============================================================ *)
+
+(* When h2 = 0, l2 must be nil *)
+Lemma sll_zero_nil: forall h l,
+  h = NULL ->
+  sll h l |-- [| l = nil |].
+Proof.
+  intros. destruct l.
+  + entailer!.
+  + simpl. Intros. Intros y. entailer!.
+Qed.
+
+(* Rebuild sllb from store + sll after appending nil *)
+Lemma store_sll_2_sllb: forall x h pt l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  sll h l |--
+  EX pt_new: addr,
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+    sllbseg (&(x # "sllb" ->ₛ "head")) pt_new l **
+    pt_new # Ptr |-> NULL.
+Proof.
+  intros.
+  sep_apply (sll_2_sllb x h l H).
+  Intros ptail_new.
+  Exists ptail_new.
+  entailer!.
+Qed.
+
+(* Full reconstruction of sllb from store + sll *)
+Lemma store_sll_2_sllb_full: forall x h l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+  sll h l |--
+  EX pt_new: addr,
+    sllbseg (&(x # "sllb" ->ₛ "head")) pt_new l **
+    pt_new # Ptr |-> NULL.
+Proof.
+  intros.
+  sep_apply (sll_2_sllb x h l H).
+  Intros ptail_new.
+  Exists ptail_new.
+  entailer!.
+Qed.
+
+(* Connecting two slls via a pointer write *)
+Lemma sll_connect: forall h1 l1 h2 l2 pt,
+  sll h1 l1 ** pt # Ptr |-> h2 ** sll h2 l2 |--
+  EX h_new: addr,
+    sll h1 l1 ** pt # Ptr |-> h2 ** sll h2 l2.
+Proof.
+  intros.
+  Exists h1. entailer!.
+Qed.
+
+(* For app_list_box: when h2 = 0, update pt and keep l1 *)
+Lemma app_sllb_nil: forall x h pt l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  pt # Ptr |-> NULL **
+  sll h l |--
+  sllb x l.
+Proof.
+  intros.
+  unfold sllb.
+  sep_apply (sll_2_sllbseg (&(x # "sllb" ->ₛ "head")) h l).
+  Intros pt_new.
+  (* Need to show that pt = pt_new or handle resource *)
+  (* Actually, we need to discard the old pt and use pt_new *)
+  (* This requires pt = pt_new, which may not be true in general *)
+  (* Let's reconsider... *)
+Abort.
+
+(* Alternative: directly fold sllb from components *)
+Lemma sllbseg_store_2_sllb: forall x pt l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  sllbseg (&(x # "sllb" ->ₛ "head")) pt l **
+  pt # Ptr |-> NULL |--
+  sllb x l.
+Proof.
+  intros. unfold sllb. Exists pt. entailer!.
+Qed.

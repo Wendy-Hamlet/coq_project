@@ -161,11 +161,13 @@ struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
 {
   /*@ sllb(b1, l1) * sllb(b2, l2)
       which implies
-      exists h1 pt1 h2 pt2,
-          b1 -> head == h1 && b1 -> ptail == pt1 &&
-          b2 -> head == h2 && b2 -> ptail == pt2 &&
+      exists pt1 h2 pt2,
+          b1 != 0 && b2 != 0 &&
+          store(&(b1 -> ptail), struct sll **, pt1) *
           sllbseg(&(b1 -> head), pt1, l1) * store(pt1, struct sll *, 0) *
-          sllbseg(&(b2 -> head), pt2, l2) * store(pt2, struct sll *, 0)
+          store(&(b2 -> head), struct sll *, h2) *
+          store(&(b2 -> ptail), struct sll **, pt2) *
+          sll(h2, l2)
   */
   struct sll *h2 = b2->head;
   struct sll **pt2 = b2->ptail;
