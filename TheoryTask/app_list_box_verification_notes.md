@@ -289,10 +289,83 @@ Definition sllb' (x: addr) (l: list Z): Assertion :=
 
 ---
 
-## 结论
+## 成功案例分析：sll_queue
 
-修改 `sllb` 定义解决了验证器层面的问题（资源可读性、`pt2` 保留），
-但仍需要在 Coq 证明中处理一个精确性问题（`h2 = head2`），使用 `Admitted` 标记。
+项目中的 `sll_queue` 成功验证了类似的队列操作，其设计值得学习。
+
+### store_queue 定义
+
+```coq
+Definition store_queue (x: addr) (l: list Z): Assertion :=
+  EX (h t: addr) (u: Z) (v: addr),
+    [| t <> 0 |] &&
+    &(x # "queue" ->ₛ "head") # Ptr |-> h **
+    &(x # "queue" ->ₛ "tail") # Ptr |-> t **
+    sllseg h t l **
+    &(t # "list" ->ₛ "data") # Int |-> u **
+    &(t # "list" ->ₛ "next") # Ptr |-> v.
+```
+
+### sll_queue 的关键设计
+
+1. **尾指针存储节点地址**：`tail` 是 `struct list *`（节点地址），不是位置
+2. **使用哨兵节点**：`tail` 指向一个"占位"节点，其 `data` 和 `next` 被显式提供
+3. **sllseg 使用值作为终点**：`sllseg h t l` 的 `t` 是最后一个节点 next 的**值**
+4. **即使空队列也有资源**：哨兵节点的字段始终可用
+
+### 设计对比
+
+| 设计 | `sll_queue` | `sllb` (我们的) |
+|------|-------------|-----------------|
+| 尾指针类型 | `struct list *` (节点地址) | `struct sll **` (位置) |
+| 谓词 | `sllseg h t l` (值为终点) | `sllbseg x y l` (位置为终点) |
+| 哨兵节点 | ✓ 使用 | ✗ 不使用 |
+| 空链表 | 有哨兵节点资源 | 纯命题，无资源 |
+| 尾指针精确性 | ✓ 节点地址唯一 | ✗ 位置需精确性推理 |
+
+### 为什么 sll_queue 成功
+
+`sll_queue` 避免了精确性问题的原因：
+
+1. **节点地址 vs 位置**：`tail` 是具体的节点地址，可以直接比较和传递
+2. **哨兵设计**：即使队列为空，`tail` 节点也存在且有资源
+3. **sllseg 不包含终点资源**：终点节点的字段被单独提供，避免资源冲突
+
+### 对 sllb 的启示
+
+如果要彻底解决问题，可以考虑：
+
+**方案 A：模仿 sll_queue 的哨兵设计**
+- 修改 `sllb` 结构体：`ptail` 改为 `struct sll *`（节点地址）
+- 使用哨兵节点
+- 需要修改 C 代码逻辑
+
+**方案 B：接受当前设计的限制**
+- 保持 `ptail` 为位置（`struct sll **`）
+- 在 Coq 证明中使用 Admitted 处理精确性
+
+---
+
+## 最终结论
+
+`app_list_box` 的验证问题根源在于 `sllb` 的设计选择：使用**位置**（`struct sll **`）而非**节点地址**作为尾指针。
+
+这与成功的 `sll_queue` 设计形成对比：
+- `sll_queue`：尾指针是节点地址，配合哨兵节点，避免精确性问题
+- `sllb`：尾指针是位置，需要精确性推理证明不同路径得到的位置相等
+
+### 建议
+
+1. **短期**：使用 Admitted 处理 `return_wit_2` 中的精确性问题，注明语义正确性
+2. **中期**：考虑修改 `sllb` 设计，采用类似 `sll_queue` 的哨兵设计
+3. **长期**：扩展验证框架，支持精确性推理
+
+### 教训
+
+1. 谓词设计应考虑验证的可行性，不仅仅是语义正确性
+2. **位置**（pointer to pointer）比**值**（pointer）更难处理
+3. **哨兵节点**是一种有效的设计模式，可以简化边界情况
+4. 参考已有的成功案例（如 `sll_queue`）可以避免重复踩坑
 
 ---
 
@@ -302,4 +375,6 @@ Definition sllb' (x: addr) (l: list Z): Assertion :=
 - `sll_project_lib.v`: Coq 谓词定义和引理
 - `sll_project_proof_manual.v`: Coq 证明
 - `sll_project_def.h`: 验证器使用的定义文件
+- `sll_queue.c`: 成功的队列实现（参考）
+- `sll_queue_lib.v`: 队列的 Coq 定义（参考）
 
