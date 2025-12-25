@@ -65,16 +65,26 @@ Fixpoint sllbseg (x y: addr) (l: list Z): Assertion :=
 
 (* ============================================================ *)
 (* sllb: list box containing singly linked list *)
-(*   - Empty: head = NULL, ptail = &head *)
-(*   - Non-empty: sllbseg from &head to ptail, *ptail = NULL *)
+(*   Design inspired by sll_queue: split empty/non-empty cases *)
+(*   - Empty: head = NULL, ptail = &head (explicit resources) *)
+(*   - Non-empty: use sllbseg (first element guarantees &head resource) *)
 (* ============================================================ *)
 
 Definition sllb (x: addr) (l: list Z): Assertion :=
   [| x <> NULL |] &&
-  EX ptail_val: addr,
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
-    sllbseg (&(x # "sllb" ->ₛ "head")) ptail_val l **
-    ptail_val # Ptr |-> NULL.
+  match l with
+  | nil =>
+      (* Empty list: explicit resources, no sllbseg *)
+      (* Key: &(x->head) |-> NULL is explicitly provided *)
+      &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
+      &(x # "sllb" ->ₛ "ptail") # Ptr |-> (&(x # "sllb" ->ₛ "head"))
+  | a :: l0 =>
+      (* Non-empty list: sllbseg provides &(x->head) |-> h *)
+      EX ptail_val: addr,
+        &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
+        sllbseg (&(x # "sllb" ->ₛ "head")) ptail_val (a :: l0) **
+        ptail_val # Ptr |-> NULL
+  end.
 
 (* ============================================================ *)
 (* map_mult: multiply each element by x *)
@@ -245,9 +255,7 @@ Lemma sllb_zero: forall x,
   &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> &(x # "sllb" ->ₛ "head").
 Proof.
-  intros. unfold sllb.
-  Intros ptail_val. simpl sllbseg.
-  Intros. subst ptail_val. entailer!.
+  intros. unfold sllb. simpl. entailer!.
 Qed.
 
 Lemma sllb_not_zero: forall x a l,
@@ -272,9 +280,7 @@ Lemma sllb_len1: forall x,
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> &(x # "sllb" ->ₛ "head") |--
   sllb x nil.
 Proof.
-  intros. unfold sllb.
-  Exists (&(x # "sllb" ->ₛ "head")).
-  simpl sllbseg. entailer!.
+  intros. unfold sllb. simpl. entailer!.
 Qed.
 
 Lemma sllb_2_sllbseg: forall x l,
@@ -285,7 +291,12 @@ Lemma sllb_2_sllbseg: forall x l,
     sllbseg (&(x # "sllb" ->ₛ "head")) ptail_val l **
     ptail_val # Ptr |-> NULL.
 Proof.
-  intros. unfold sllb. Intros ptail_val. Exists ptail_val. entailer!.
+  intros. unfold sllb. destruct l.
+  + (* nil case *)
+    Exists (&(x # "sllb" ->ₛ "head")).
+    simpl sllbseg. entailer!.
+  + (* cons case *)
+    Intros ptail_val. Exists ptail_val. entailer!.
 Qed.
 
 Lemma sllb_2_sll: forall x l,
@@ -296,9 +307,13 @@ Lemma sllb_2_sll: forall x l,
     &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
     sll head_val l.
 Proof.
-  intros. unfold sllb.
-  Intros ptail_val. sep_apply sllbseg_0_sll'.
-  Intros head_val. Exists head_val ptail_val. entailer!.
+  intros. unfold sllb. destruct l.
+  + (* nil case *)
+    Exists NULL (&(x # "sllb" ->ₛ "head")).
+    simpl sll. entailer!.
+  + (* cons case *)
+    Intros ptail_val. sep_apply sllbseg_0_sll'.
+    Intros head_val. Exists head_val ptail_val. entailer!.
 Qed.
 
 Lemma sllbseg_2_sllb: forall x ptail_val l,
@@ -308,7 +323,11 @@ Lemma sllbseg_2_sllb: forall x ptail_val l,
   ptail_val # Ptr |-> NULL |--
   sllb x l.
 Proof.
-  intros. unfold sllb. Exists ptail_val. entailer!.
+  intros. unfold sllb. destruct l.
+  + (* nil case *)
+    simpl sllbseg. Intros. subst ptail_val. entailer!.
+  + (* cons case *)
+    Exists ptail_val. entailer!.
 Qed.
 
 Lemma sll_2_sllbseg: forall x h l,
@@ -400,7 +419,9 @@ Lemma sllbseg_store_2_sllb: forall x pt l,
   pt # Ptr |-> NULL |--
   sllb x l.
 Proof.
-  intros. unfold sllb. Exists pt. entailer!.
+  intros. unfold sllb. destruct l.
+  + simpl sllbseg. Intros. subst pt. entailer!.
+  + Exists pt. entailer!.
 Qed.
 
 (* For app_list_box: sllbseg + pt |-> h + sll h l2 => sllbseg of l1++l2 *)
@@ -447,8 +468,9 @@ Lemma app_sllb_direct: forall x pt l,
   pt # Ptr |-> NULL |--
   sllb x l.
 Proof.
-  intros.
-  unfold sllb. Exists pt. entailer!.
+  intros. unfold sllb. destruct l.
+  + simpl sllbseg. Intros. subst pt. entailer!.
+  + Exists pt. entailer!.
 Qed.
 
 (* For return_wit_2: Connect l1 and l2 using sll, then fold to sllb *)
@@ -468,5 +490,44 @@ Proof.
   sep_apply (sllbseg_pt_sll (&(x # "sllb" ->ₛ "head")) pt1 l1 h2 l2).
   Intros pt_final.
   Exists pt_final.
+  entailer!.
+Qed.
+
+(* ============================================================ *)
+(* New lemmas for app_list_box with split sllb definition *)
+(* ============================================================ *)
+
+(* Direct append with sllbseg only - core lemma for app_list_box *)
+(* After writing pt1 |-> h2, we can connect l1 and (a::l2) *)
+Lemma sllbseg_append_sllbseg: forall x pt1 l1 h2 pt2 a l2,
+  h2 <> NULL ->
+  sllbseg x pt1 l1 ** 
+  pt1 # Ptr |-> h2 ** 
+  &(h2 # "sll" ->ₛ "data") # UInt |-> a **
+  sllbseg (&(h2 # "sll" ->ₛ "next")) pt2 l2 **
+  pt2 # Ptr |-> NULL |--
+  sllbseg x pt2 (l1 ++ a :: l2) ** pt2 # Ptr |-> NULL.
+Proof.
+  intros. revert x. induction l1; simpl; intros.
+  + Intros. subst x. Exists h2. entailer!.
+  + Intros u. Exists u. sep_apply IHl1. entailer!.
+Qed.
+
+(* For app_list_box return_wit_2: when l2 is non-empty *)
+(* After executing *pt1 = h2, we have pt1 |-> h2 (not NULL) *)
+(* sllbseg for b2's content starts from &(b2->head) |-> h2 *)
+Lemma app_sllb_nonempty_direct: forall x pt1 l1 pt2 h2 a l2,
+  x <> NULL -> h2 <> NULL ->
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
+  sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 **
+  pt1 # Ptr |-> h2 ** 
+  &(h2 # "sll" ->ₛ "data") # UInt |-> a **
+  sllbseg (&(h2 # "sll" ->ₛ "next")) pt2 l2 **
+  pt2 # Ptr |-> NULL |--
+  sllb x (l1 ++ a :: l2).
+Proof.
+  intros.
+  sep_apply (sllbseg_append_sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 a l2 H0).
+  sep_apply (sllbseg_store_2_sllb x pt2 (l1 ++ a :: l2) H).
   entailer!.
 Qed.
