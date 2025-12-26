@@ -597,3 +597,30 @@ Proof.
   + (* cons case *)
     Intros. Exists pt. simpl sllbseg. Exists h. entailer!.
 Qed.
+
+(* ============================================================ *)
+(* Key lemma: which_implies for app_list_box is valid *)
+(* This proves sllb(b1,l1) * sllb(b2,l2) |-- which_implies_rhs *)
+(* ============================================================ *)
+
+Lemma app_list_box_which_implies_valid: forall b1 b2 l1 l2,
+  sllb b1 l1 ** sllb b2 l2 |--
+  EX pt1 h2 pt2: addr,
+    [| b1 <> NULL |] && [| b2 <> NULL |] &&
+    &(b1 # "sllb" ->ₛ "ptail") # Ptr |-> pt1 **
+    sllbseg (&(b1 # "sllb" ->ₛ "head")) pt1 l1 **
+    pt1 # Ptr |-> NULL **
+    &(b2 # "sllb" ->ₛ "head") # Ptr |-> h2 **
+    &(b2 # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
+    sll_pt h2 pt2 l2.
+Proof.
+  intros.
+  (* For b1: use sllb_2_sllbseg *)
+  sep_apply (sllb_2_sllbseg b1 l1).
+  Intros pt1.
+  (* For b2: use sllb_to_store_sll_pt *)
+  sep_apply (sllb_to_store_sll_pt b2 l2).
+  Intros h2 pt2.
+  Exists pt1 h2 pt2.
+  entailer!.
+Qed.
