@@ -29,17 +29,18 @@ Lemma proof_of_free_list_return_wit_1 : free_list_return_wit_1.
 Proof.
   pre_process.
   subst head.
-  sep_apply (sll_zero NULL l_rest).
-  { reflexivity. }
-  Intros. subst l_rest. entailer!.
+  sep_apply sll_zero.
+  - entailer!.
+  - entailer!.
 Qed.
 
 Lemma proof_of_free_list_which_implies_wit_1 : free_list_which_implies_wit_1.
 Proof.
   pre_process.
-  sep_apply (sll_not_zero head l_rest H).
-  Intros y a l0.
-  Exists y a l0. entailer!.
+  destruct l_rest as [ | a l0].
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros y.
+    Exists y a l0. entailer!.
 Qed.
 
 Lemma proof_of_map_list_entail_wit_1 : map_list_entail_wit_1.
@@ -52,32 +53,34 @@ Qed.
 Lemma proof_of_map_list_entail_wit_2 : map_list_entail_wit_2.
 Proof.
   pre_process.
-  Exists (l1_2 ++ [p_data]) l2_new.
-  rewrite map_mult_cons.
-  sep_apply (sllseg_sllseg head_pre p p_next (map_mult x_pre l1_2) [unsigned_last_nbits (x_pre * p_data) 32]).
-  simpl sllseg. Exists p_next.
+  Exists (l1_2 ++ (p_data :: nil)) l2_new.
   entailer!.
-  subst l2_2. rewrite <- app_assoc. simpl. reflexivity.
+  - sep_apply sllseg_len1; try easy.
+    rewrite logic_equiv_sepcon_comm.
+    sep_apply sllseg_sllseg.
+    assert (H_eq: map_mult x_pre (l1_2 ++ p_data :: nil) = map_mult x_pre l1_2 ++ unsigned_last_nbits (x_pre * p_data) 32 :: nil).
+    { unfold map_mult. rewrite map_app. simpl. reflexivity. }
+    rewrite H_eq. entailer!.
+  - rewrite H1, H. rewrite <- app_assoc. simpl. reflexivity.
 Qed.
 
 Lemma proof_of_map_list_return_wit_1 : map_list_return_wit_1.
 Proof.
   pre_process.
   subst p.
-  sep_apply (sll_zero NULL l2).
-  { reflexivity. }
+  sep_apply sll_zero; try tauto.
   Intros. subst l2.
-  rewrite app_nil_r.
-  sep_apply (sllseg_0_sll head_pre (map_mult x_pre l1)).
-  entailer!.
+  sep_apply sllseg_0_sll.
+  rewrite app_nil_r in H0. subst l. entailer!.
 Qed.
 
 Lemma proof_of_map_list_which_implies_wit_1 : map_list_which_implies_wit_1.
 Proof.
   pre_process.
-  sep_apply (sll_not_zero p l2 H0).
-  Intros y a l0.
-  Exists y a l0. entailer!.
+  destruct l2 as [ | a l0].
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros y.
+    Exists y a l0. entailer!.
 Qed. 
 
 Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
@@ -140,38 +143,43 @@ Qed.
 Lemma proof_of_sll_length_entail_wit_2 : sll_length_entail_wit_2.
 Proof.
   pre_process.
-  Exists (l1_2 ++ [head_data]) l3.
-  sep_apply (sllseg_sllseg head_pre head head_next l1_2 [head_data]).
-  simpl sllseg. Exists head_next.
+  Exists (l1_2 ++ (head_data :: nil)) l3.
+  simpl.
   entailer!.
-  + subst l2_2. rewrite <- app_assoc. simpl. reflexivity.
-  + rewrite Zlength_app. rewrite Zlength_cons. rewrite Zlength_nil.
-    subst len. rewrite Z.add_comm.
+  sep_apply sllseg_len1.
+  - rewrite logic_equiv_sepcon_comm.
+    sep_apply sllseg_sllseg. entailer!.
+  - entailer!.
+  - rewrite Zlength_app. rewrite Zlength_cons, Zlength_nil.
+    rewrite <- H2.
+    apply unsigned_last_nbits_eq.
+    rewrite H1, H in H3.
+    rewrite Zlength_app, Zlength_cons in H3.
     pose proof (Zlength_nonneg l1_2).
-    assert (Hbound: Zlength l1_2 + 1 <= INT_MAX).
-    { subst l. rewrite Zlength_app. subst l2_2. rewrite Zlength_cons.
-      pose proof (Zlength_nonneg l3). lia. }
-    rewrite unsigned_last_nbits_eq; lia.
+    rewrite <- H2 in H4.
+    pose proof (Zlength_nonneg l3). lia.
+  - rewrite H1, H. rewrite <- app_assoc. simpl. reflexivity.
 Qed.
 
 Lemma proof_of_sll_length_return_wit_1 : sll_length_return_wit_1.
 Proof.
   pre_process.
-  subst head.
-  sep_apply (sll_zero NULL l2).
-  { reflexivity. }
-  Intros. subst l2.
-  rewrite app_nil_r.
-  sep_apply (sllseg_0_sll head_pre l1).
+  rewrite H.
+  sep_apply sll_zero.
+  subst l.
   entailer!.
+  - rewrite H0, app_nil_r. sep_apply sllseg_0_sll. entailer!.
+  - rewrite H0, app_nil_r. assumption.
+  - reflexivity.
 Qed.
 
 Lemma proof_of_sll_length_which_implies_wit_1 : sll_length_which_implies_wit_1.
 Proof.
   pre_process.
-  sep_apply (sll_not_zero head l2 H).
-  Intros y a l0.
-  Exists y a l0. entailer!.
+  destruct l2 as [ | a l0].
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros x.
+    Exists x a l0. entailer!.
 Qed. 
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
