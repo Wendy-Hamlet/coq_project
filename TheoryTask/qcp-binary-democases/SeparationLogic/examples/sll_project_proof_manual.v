@@ -183,20 +183,84 @@ Proof.
 Qed. 
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists (@nil Z) l.
+  simpl sllseg. simpl Zlength. simpl app.
+  rewrite (UIntArray.ceil_shape_empty retval_2 0).
+  entailer!.
+  rewrite H.
+  pose proof (Zlength_nonneg l).
+  lia.
+Qed.
 
 Lemma proof_of_sll2array_entail_wit_2 : sll2array_entail_wit_2.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists (l1_2 ++ p_data :: nil) l3.
+  entailer!.
+  - sep_apply sllseg_len1; try easy.
+    rewrite logic_equiv_sepcon_comm.
+    sep_apply sllseg_sllseg.
+    entailer!.
+  - rewrite Zlength_app, Zlength_cons, Zlength_nil. lia.
+  - rewrite H2, H. rewrite <- app_assoc. simpl. reflexivity.
+Qed.
 
 Lemma proof_of_sll2array_return_wit_1 : sll2array_return_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  subst p.
+  sep_apply sll_zero; try tauto.
+  Intros. subst l2.
+  rewrite app_nil_r in H0.
+  subst l.
+  Exists arr.
+  sep_apply sllseg_0_sll.
+  (* Now need: ceil_shape arr 0 i ** undef_ceil arr i len |-- full_shape arr len *)
+  (* When i = len = Zlength l1 (since l1 = l and l2 = nil), undef_ceil is empty *)
+  (* First, unify all indices using H1 and H2 *)
+  rewrite H1. (* Replace i with Zlength l1 *)
+  rewrite H2. (* Replace len with Zlength l1 *)
+  rewrite (UIntArray.undef_ceil_empty arr (Zlength l1)).
+  sep_apply (UIntArray.ceil_shape_to_full_shape arr 0 (Zlength l1)).
+  replace (arr + 0 * sizeof(UINT)) with arr by lia.
+  replace (Zlength l1 - 0) with (Zlength l1) by lia.
+  entailer!.
+Qed.
 
 Lemma proof_of_sll2array_partial_solve_wit_3_pure : sll2array_partial_solve_wit_3_pure.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  (* Need to show: l = app l1 l2 /\ p <> 0 /\ i < len *)
+  (* From hypothesis, we have p <> 0 and sll p l2 *)
+  (* sll p l2 with p <> 0 implies l2 is non-empty, hence Zlength l2 >= 1 *)
+  (* So i = Zlength l1 < Zlength l1 + Zlength l2 = Zlength (l1 ++ l2) = Zlength l = len *)
+  prop_apply (sll_not_null_length p l2 H).
+  Intros.
+  entailer!.
+  (* Goal: i < len *)
+  (* Use H1: i = Zlength l1, H2: len = Zlength l, H0: l = l1 ++ l2 *)
+  subst i len.
+  rewrite H0.
+  rewrite Zlength_app.
+  (* Now goal is: Zlength l1 < Zlength l1 + Zlength l2, and we have H7: Zlength l2 >= 1 *)
+  lia.
+Qed.
 
 Lemma proof_of_sll2array_which_implies_wit_1 : sll2array_which_implies_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  destruct l2 as [ | a l0].
+  - (* l2 = nil, but p <> 0, contradiction *)
+    simpl sll. Intros. tauto.
+  - (* l2 = a :: l0 *)
+    simpl sll. Intros. Intros y.
+    Exists y a l0.
+    entailer!.
+Qed.
 
 Lemma proof_of_sllb2array_return_wit_1 : sllb2array_return_wit_1.
-Proof. Admitted. 
+Proof.
+Admitted. 
 
