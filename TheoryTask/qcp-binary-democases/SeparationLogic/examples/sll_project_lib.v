@@ -531,3 +531,69 @@ Proof.
   sep_apply (sllbseg_store_2_sllb x pt2 (l1 ++ a :: l2) H).
   entailer!.
 Qed.
+
+(* ============================================================ *)
+(* sll_pt: sll with explicit tail pointer location tracking *)
+(* Simpler design: uses sllbseg internally *)
+(* ============================================================ *)
+
+(* sll_pt h pt l: 
+   - h: head node address
+   - pt: tail pointer location (where NULL is stored)
+   - l: list content
+   
+   Key property: 
+   - Empty list: h = NULL (pt is not constrained, no heap resource)
+   - Non-empty list: first node data + sllbseg to pt + pt |-> NULL *)
+Definition sll_pt (h: addr) (pt: addr) (l: list Z): Assertion :=
+  match l with
+  | nil => [| h = NULL |] && emp
+  | a :: l0 =>
+      [| h <> NULL |] &&
+      &(h # "sll" ->ₛ "data") # UInt |-> a **
+      sllbseg (&(h # "sll" ->ₛ "next")) pt l0 **
+      pt # Ptr |-> NULL
+  end.
+
+(* Convert sll_pt to sll (losing pt info) *)
+Lemma sll_pt_to_sll: forall h pt l,
+  sll_pt h pt l |-- sll h l.
+Proof.
+  intros. destruct l; simpl.
+  + entailer!.
+  + Intros. sep_apply sllbseg_0_sll'. Intros next.
+    Exists next. entailer!.
+Qed.
+
+(* sllb can be expressed as store + sll_pt *)
+Lemma sllb_to_store_sll_pt: forall x l,
+  sllb x l |--
+  EX h pt: addr,
+    [| x <> NULL |] &&
+    &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+    sll_pt h pt l.
+Proof.
+  intros. unfold sllb. destruct l; simpl.
+  + (* nil case *)
+    Exists NULL (&(x # "sllb" ->ₛ "head")).
+    simpl sll_pt. entailer!.
+  + (* cons case *)
+    Intros ptail_val. simpl sllbseg. Intros head_val.
+    Exists head_val ptail_val. simpl sll_pt. entailer!.
+Qed.
+
+(* Reconstruct sllb from store + sll_pt *)
+Lemma store_sll_pt_to_sllb: forall x h pt l,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
+  sll_pt h pt l |--
+  sllb x l.
+Proof.
+  intros. unfold sllb. destruct l; simpl sll_pt.
+  + (* nil case *)
+    Intros. subst h. entailer!.
+  + (* cons case *)
+    Intros. Exists pt. simpl sllbseg. Exists h. entailer!.
+Qed.

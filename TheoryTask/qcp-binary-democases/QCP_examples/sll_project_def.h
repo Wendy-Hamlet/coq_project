@@ -19,6 +19,7 @@ struct sllb {
                (sllseg : Z -> Z -> list Z -> Assertion)
                (sllbseg : Z -> Z -> list Z -> Assertion)
                (sllb : Z -> list Z -> Assertion)
+               (sll_pt : Z -> Z -> list Z -> Assertion)
                (map_mult : Z -> list Z -> list Z)
 */
 
