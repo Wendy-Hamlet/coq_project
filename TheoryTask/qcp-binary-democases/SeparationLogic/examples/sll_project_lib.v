@@ -583,19 +583,28 @@ Proof.
     Exists head_val ptail_val. simpl sll_pt. entailer!.
 Qed.
 
-(* Reconstruct sllb from store + sll_pt *)
-Lemma store_sll_pt_to_sllb: forall x h pt l,
+(* Reconstruct sllb from store + sll_pt - non-empty case only *)
+(* For empty list, pt must equal &(x->head), which is handled separately *)
+Lemma store_sll_pt_to_sllb_nonempty: forall x h pt a l,
   x <> NULL ->
   &(x # "sllb" ->ₛ "head") # Ptr |-> h **
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  sll_pt h pt l |--
-  sllb x l.
+  sll_pt h pt (a :: l) |--
+  sllb x (a :: l).
 Proof.
-  intros. unfold sllb. destruct l; simpl sll_pt.
-  + (* nil case *)
-    Intros. subst h. entailer!.
-  + (* cons case *)
-    Intros. Exists pt. simpl sllbseg. Exists h. entailer!.
+  intros. unfold sllb. simpl sll_pt. simpl.
+  Intros. Exists pt. simpl sllbseg. Exists h. entailer!.
+Qed.
+
+(* Reconstruct sllb from store + sll_pt - empty case *)
+(* Note: pt must be &(x->head) for empty list *)
+Lemma store_sll_pt_to_sllb_empty: forall x,
+  x <> NULL ->
+  &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
+  &(x # "sllb" ->ₛ "ptail") # Ptr |-> (&(x # "sllb" ->ₛ "head")) |--
+  sllb x nil.
+Proof.
+  intros. unfold sllb. simpl. entailer!.
 Qed.
 
 (* ============================================================ *)
