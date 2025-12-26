@@ -459,21 +459,21 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   **  ((pt1) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 |--
   [| (0 <= INT_MAX) |] 
   &&  [| ((INT_MIN) <= 0) |]
 .
 
 Definition app_list_box_return_wit_1 := 
-forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (h2: Z) (pt1: Z) ,
+forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) (pt1: Z) ,
   [| (h2 = 0) |] 
   &&  [| (b1_pre <> 0) |] 
   &&  [| (b2_pre <> 0) |]
   &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 |--
   (sllb b1_pre (app (l1) (l2)) )
 .
@@ -486,7 +486,7 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   &&  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 |--
   (sllb b1_pre (app (l1) (l2)) )
 .
@@ -510,7 +510,7 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   **  ((pt1) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 |--
   [| (h2 <> 0) |] 
   &&  [| (b1_pre <> 0) |] 
@@ -520,7 +520,7 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 .
 
 Definition app_list_box_partial_solve_wit_3 := 
@@ -533,7 +533,7 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   **  ((pt1) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 |--
   [| (h2 = 0) |] 
   &&  [| (b1_pre <> 0) |] 
@@ -543,7 +543,7 @@ forall (b2_pre: Z) (b1_pre: Z) (l2: (@list Z)) (l1: (@list Z)) (pt2: Z) (h2: Z) 
   **  ((&((b1_pre)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt1)
   **  (sllbseg &((b1_pre)  # "sllb" ->ₛ "head") pt1 l1 )
   **  ((pt1) # Ptr  |-> h2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 .
 
 Definition app_list_box_which_implies_wit_1 := 
@@ -559,7 +559,7 @@ forall (l2: (@list Z)) (l1: (@list Z)) (b1: Z) (b2: Z) ,
   **  ((pt1) # Ptr  |-> 0)
   **  ((&((b2)  # "sllb" ->ₛ "head")) # Ptr  |-> h2)
   **  ((&((b2)  # "sllb" ->ₛ "ptail")) # Ptr  |-> pt2)
-  **  (sll h2 l2 )
+  **  (sll_pt h2 pt2 l2 )
 .
 
 (*----- Function sll_length -----*)
