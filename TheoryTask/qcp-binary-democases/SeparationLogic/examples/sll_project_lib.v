@@ -572,6 +572,39 @@ Definition sll_pt (h: addr) (pt: addr) (l: list Z): Assertion :=
       pt # Ptr |-> NULL
   end.
 
+(* Convert sllbseg + store(pt, NULL) to store + sll_pt (preserving pt info) *)
+Lemma sllbseg_0_sll_pt: forall x pt l,
+  sllbseg x pt l ** pt # Ptr |-> NULL |--
+  EX head_val: addr, x # Ptr |-> head_val ** sll_pt head_val pt l.
+Proof.
+  intros. destruct l; simpl.
+  + (* nil case *)
+    simpl sllbseg. Intros. subst x.
+    Exists NULL. simpl sll_pt. entailer!.
+  + (* cons case *)
+    simpl sllbseg. Intros head_val.
+    Exists head_val. simpl sll_pt. entailer!.
+Qed.
+
+(* Convert store + sll_pt back to sllbseg + store(pt, 0) for non-empty list *)
+Lemma sll_pt_to_sllbseg_nonempty: forall x h pt a l0,
+  x # Ptr |-> h ** sll_pt h pt (a :: l0) |--
+  sllbseg x pt (a :: l0) ** pt # Ptr |-> NULL.
+Proof.
+  intros. simpl sll_pt. Intros.
+  simpl sllbseg. Exists h. entailer!.
+Qed.
+
+(* For empty list: if x = pt, then we can convert *)
+Lemma sll_pt_to_sllbseg_nil: forall x h pt,
+  x = pt ->
+  x # Ptr |-> h ** sll_pt h pt nil |--
+  sllbseg x pt nil ** pt # Ptr |-> NULL.
+Proof.
+  intros. simpl sll_pt. Intros. subst h.
+  simpl sllbseg. subst x. entailer!.
+Qed.
+
 (* Convert sll_pt to sll (losing pt info) *)
 Lemma sll_pt_to_sll: forall h pt l,
   sll_pt h pt l |-- sll h l.
