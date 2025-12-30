@@ -61,19 +61,10 @@ Proof. Admitted.
 Lemma proof_of_nil_list_box_partial_solve_wit_2 : nil_list_box_partial_solve_wit_2.
 Proof. Admitted. 
 
-Lemma proof_of_nil_list_box_partial_solve_wit_3_pure : nil_list_box_partial_solve_wit_3_pure.
+Lemma proof_of_cons_list_box_safety_wit_1 : cons_list_box_safety_wit_1.
 Proof. Admitted. 
 
-Lemma proof_of_nil_list_box_partial_solve_wit_3 : nil_list_box_partial_solve_wit_3.
-Proof. Admitted. 
-
-Lemma proof_of_nil_list_box_which_implies_wit_1 : nil_list_box_which_implies_wit_1.
-Proof. Admitted. 
-
-Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
-Proof. Admitted. 
-
-Lemma proof_of_cons_list_box_return_wit_2 : cons_list_box_return_wit_2.
+Lemma proof_of_cons_list_box_safety_wit_2 : cons_list_box_safety_wit_2.
 Proof. Admitted. 
 
 Lemma proof_of_cons_list_box_partial_solve_wit_1 : cons_list_box_partial_solve_wit_1.
@@ -82,19 +73,16 @@ Proof. Admitted.
 Lemma proof_of_cons_list_box_partial_solve_wit_2 : cons_list_box_partial_solve_wit_2.
 Proof. Admitted. 
 
-Lemma proof_of_cons_list_box_which_implies_wit_1 : cons_list_box_which_implies_wit_1.
+Lemma proof_of_cons_list_box_partial_solve_wit_3 : cons_list_box_partial_solve_wit_3.
 Proof. Admitted. 
 
-Lemma proof_of_map_list_box_return_wit_1 : map_list_box_return_wit_1.
+Lemma proof_of_cons_list_box_partial_solve_wit_4 : cons_list_box_partial_solve_wit_4.
 Proof. Admitted. 
 
 Lemma proof_of_map_list_box_partial_solve_wit_1 : map_list_box_partial_solve_wit_1.
 Proof. Admitted. 
 
 Lemma proof_of_map_list_box_partial_solve_wit_2 : map_list_box_partial_solve_wit_2.
-Proof. Admitted. 
-
-Lemma proof_of_map_list_box_which_implies_wit_1 : map_list_box_which_implies_wit_1.
 Proof. Admitted. 
 
 Lemma proof_of_free_list_box_return_wit_1 : free_list_box_return_wit_1.
@@ -164,8 +152,5 @@ Lemma proof_of_sllb2array_partial_solve_wit_2_pure : sllb2array_partial_solve_wi
 Proof. Admitted. 
 
 Lemma proof_of_sllb2array_partial_solve_wit_2 : sllb2array_partial_solve_wit_2.
-Proof. Admitted. 
-
-Lemma proof_of_sllb2array_which_implies_wit_1 : sllb2array_which_implies_wit_1.
 Proof. Admitted. 
 

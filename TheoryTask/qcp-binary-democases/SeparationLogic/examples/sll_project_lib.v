@@ -206,6 +206,23 @@ Proof.
   + Intros u. Exists u. entailer!.
 Qed.
 
+(* Extend sllbseg by one element at the end *)
+Lemma sllbseg_extend: forall x cur node a l1,
+  node <> NULL ->
+  sllbseg x cur l1 **
+  cur # Ptr |-> node **
+  &(node # "sll" ->ₛ "data") # UInt |-> a |--
+  sllbseg x (&(node # "sll" ->ₛ "next")) (l1 ++ [a]).
+Proof.
+  intros.
+  sep_apply (sllbseg_len1 cur node a H).
+  (* Now we have: sllbseg x cur l1 ** sllbseg cur &(node->next) [a]
+     Need to reorder for sllbseg_sllbseg *)
+  rewrite logic_equiv_sepcon_comm.
+  sep_apply sllbseg_sllbseg.
+  entailer!.
+Qed.
+
 Lemma sllbseg_2_sllseg: forall x y z l,
   sllbseg x y l ** y # Ptr |-> z |--
   EX y': addr, x # Ptr |-> y' ** sllseg y' z l.

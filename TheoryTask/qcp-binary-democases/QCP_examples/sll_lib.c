@@ -18,9 +18,11 @@ struct sll *new_list_node()
 */;
 
 struct sll *cons_list(unsigned int data, struct sll *next)
-/*@ With l
-    Require sll(next, l)
-    Ensure sll(__return, cons(data, l))
+/*@ With l pt
+    Require sll_pt(next, pt, l)
+    Ensure exists pt_new,
+           sll_pt(__return, pt_new, cons(data, l)) &&
+           (l == nil && pt_new == &(__return -> next) || l != nil && pt_new == pt)
 */
 {
   struct sll *node = new_list_node();
@@ -55,23 +57,23 @@ void free_list(struct sll *head)
 }
 
 void map_list(struct sll *head, unsigned int x)
-/*@ With l
-    Require sll(head, l)
-    Ensure sll(head, map_mult(x, l))
+/*@ With l pt
+    Require sll_pt(head, pt, l)
+    Ensure sll_pt(head, pt, map_mult(x, l))
 */
 {
   struct sll *p;
   /*@ Inv exists l1 l2, l == app(l1, l2) &&
-          sllseg(head@pre, p, map_mult(x@pre, l1)) * sll(p, l2) &&
+          sllseg(head@pre, p, map_mult(x@pre, l1)) * sll_pt(p, pt, l2) &&
           head == head@pre && x == x@pre
   */
   for (p = head; p != (struct sll *)0; p = p->next) {
     /*@ exists l1 l2, l == app(l1, l2) &&
-            sllseg(head, p, map_mult(x, l1)) * sll(p, l2) &&
+            sllseg(head, p, map_mult(x, l1)) * sll_pt(p, pt, l2) &&
             p != 0
         which implies
         exists l2_new, l2 == cons(p->data, l2_new) &&
-            sllseg(head, p, map_mult(x, l1)) * sll(p->next, l2_new)
+            sllseg(head, p, map_mult(x, l1)) * sll_pt(p->next, pt, l2_new)
     */
     p->data = x * p->data;
   }
@@ -87,29 +89,34 @@ struct sllb *new_sllb()
 
 struct sllb *nil_list_box()
 /*@ Require emp
-    Ensure sllb(__return, nil)
+    Ensure __return != 0 &&
+           store(&(__return -> head), struct sll *, 0) *
+           store(&(__return -> ptail), struct sll **, &(__return -> head))
 */
 {
   struct sllb *box = new_sllb();
   box->head = nil_list();
   box->ptail = &box->head;
-  /*@ box != 0 && box -> head == 0 && box -> ptail == &(box -> head) && sll(0,
-     nil) which implies sllb(box, nil)
-  */
   return box;
 }
 
 struct sllb *cons_list_box(unsigned int data, struct sllb *box)
-/*@ With l
-    Require sllb(box, l)
-    Ensure sllb(__return, cons(data, l))
+/*@ With l pt
+    Require box != 0 &&
+            (pt == &(box -> head) && l == nil || pt != &(box -> head) && l != nil) &&
+            store(&(box -> ptail), struct sll **, pt) *
+            sllbseg(&(box -> head), pt, l) *
+            store(pt, struct sll *, 0)
+    Ensure exists pt_new,
+           __return != 0 &&
+           store(&(__return -> ptail), struct sll **, pt_new) *
+           sllbseg(&(__return -> head), pt_new, cons(data, l)) *
+           store(pt_new, struct sll *, 0)
 */
 {
-  /*@ sllb(box, l)
+  /*@ sllbseg(&(box -> head), pt, l) * store(pt, struct sll *, 0)
       which implies
-      exists h pt,
-          box != 0 && box -> head == h && box -> ptail == pt &&
-          sll(h, l)
+      exists h, store(&(box -> head), struct sll *, h) * sll_pt(h, pt, l)
   */
   box->head = cons_list(data, box->head);
   if (box->ptail == &box->head) {
@@ -119,15 +126,21 @@ struct sllb *cons_list_box(unsigned int data, struct sllb *box)
 }
 
 struct sllb *map_list_box(struct sllb *box, unsigned int x)
-/*@ With l
-    Require sllb(box, l)
-    Ensure sllb(__return, map_mult(x, l))
+/*@ With l pt
+    Require box != 0 &&
+            store(&(box -> ptail), struct sll **, pt) *
+            sllbseg(&(box -> head), pt, l) *
+            store(pt, struct sll *, 0)
+    Ensure exists pt_new,
+           __return != 0 &&
+           store(&(__return -> ptail), struct sll **, pt_new) *
+           sllbseg(&(__return -> head), pt_new, map_mult(x, l)) *
+           store(pt_new, struct sll *, 0)
 */
 {
-  /*@ sllb(box, l)
+  /*@ sllbseg(&(box -> head), pt, l) * store(pt, struct sll *, 0)
       which implies
-      exists h pt, box != 0 && box -> head == h && box -> ptail == pt && sll(h,
-     l)
+      exists h, store(&(box -> head), struct sll *, h) * sll_pt(h, pt, l)
   */
   map_list(box->head, x);
   return box;
@@ -180,21 +193,21 @@ struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
 }
 
 unsigned int sll_length(struct sll *head)
-/*@ With l
-    Require sll(head, l) && Zlength(l) <= 2147483647
-    Ensure __return == Zlength(l) && sll(head@pre, l)
+/*@ With l pt
+    Require sll_pt(head, pt, l) && Zlength(l) <= 2147483647
+    Ensure __return == Zlength(l) && sll_pt(head@pre, pt, l)
 */
 {
   unsigned int len = 0;
   /*@ Inv exists l1 l2,
           l == app(l1, l2) &&
           len == Zlength(l1) &&
-          sllseg(head@pre, head, l1) * sll(head, l2)
+          sllseg(head@pre, head, l1) * sll_pt(head, pt, l2)
   */
   while (head) {
-    /*@ exists l2, head != 0 && sll(head, l2)
+    /*@ exists l2, head != 0 && sll_pt(head, pt, l2)
         which implies
-        exists l3, l2 == cons(head -> data, l3) && sll(head -> next, l3)
+        exists l3, l2 == cons(head -> data, l3) && sll_pt(head -> next, pt, l3)
     */
     ++len;
     head = head->next;
@@ -210,9 +223,9 @@ unsigned int *new_uint_array(unsigned int n)
     ;
 
 unsigned int sll2array(struct sll *head, unsigned int **out_array)
-/*@ With l
-    Require sll(head, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array,
-   unsigned int *) Ensure exists arr_ret, sll(head@pre, l) &&
+/*@ With l pt
+    Require sll_pt(head, pt, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array,
+   unsigned int *) Ensure exists arr_ret, sll_pt(head@pre, pt, l) &&
    store(out_array@pre, unsigned int *, arr_ret) &&
    UIntArray::full_shape(arr_ret, Zlength(l))
 */
@@ -226,14 +239,14 @@ unsigned int sll2array(struct sll *head, unsigned int **out_array)
           i == Zlength(l1) &&
           len == Zlength(l) &&
           0 <= i && i <= len &&
-          sllseg(head@pre, p, l1) * sll(p, l2) *
+          sllseg(head@pre, p, l1) * sll_pt(p, pt, l2) *
           UIntArray::ceil_shape(arr, 0, i) * UIntArray::undef_ceil(arr, i, len)
   */
   while (p) {
-    /*@ exists l1 l2, l == app(l1, l2) && p != 0 && i < len && sll(p, l2) *
+    /*@ exists l1 l2, l == app(l1, l2) && p != 0 && i < len && sll_pt(p, pt, l2) *
             sllseg(head@pre, p, l1) * UIntArray::ceil_shape(arr, 0, i) *
        UIntArray::undef_ceil(arr, i, len) which implies exists l3, l2 == cons(p
-       -> data, l3) && i < len && sll(p -> next, l3) * sllseg(head@pre, p, l1) *
+       -> data, l3) && i < len && sll_pt(p -> next, pt, l3) * sllseg(head@pre, p, l1) *
        UIntArray::ceil_shape(arr, 0, i) * UIntArray::undef_ceil(arr, i, len)
     */
     arr[i] = p->data;
@@ -245,16 +258,23 @@ unsigned int sll2array(struct sll *head, unsigned int **out_array)
 }
 
 unsigned int sllb2array(struct sllb *box, unsigned int **out_array)
-/*@ With l
-    Require sllb(box, l) && Zlength(l) <= 2147483647 && undef_data_at(out_array,
-   unsigned int *) Ensure exists arr_ret, sllb(box@pre, l) &&
-   store(out_array@pre, unsigned int *, arr_ret) &&
-   UIntArray::full_shape(arr_ret, Zlength(l))
+/*@ With l pt
+    Require box != 0 && Zlength(l) <= 2147483647 &&
+            store(&(box -> ptail), struct sll **, pt) *
+            sllbseg(&(box -> head), pt, l) *
+            store(pt, struct sll *, 0) *
+            undef_data_at(out_array, unsigned int *)
+    Ensure exists arr_ret pt_new,
+           store(&(box@pre -> ptail), struct sll **, pt_new) *
+           sllbseg(&(box@pre -> head), pt_new, l) *
+           store(pt_new, struct sll *, 0) *
+           store(out_array@pre, unsigned int *, arr_ret) *
+           UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
-  /*@ sllb(box, l)
+  /*@ sllbseg(&(box -> head), pt, l) * store(pt, struct sll *, 0)
       which implies
-      exists h pt, box -> head == h && box -> ptail == pt && sll(h, l)
+      exists h, store(&(box -> head), struct sll *, h) * sll_pt(h, pt, l)
   */
   return sll2array(box->head, out_array);
 }

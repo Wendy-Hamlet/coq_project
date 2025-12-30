@@ -45,11 +45,12 @@ right : sllseg(?p, p, ?l) at 0
 action : right_erase(0);
          right_add(l == nil{Z});
 
-id : 15
-priority : core(0)
-left : sllseg(?p, p, ?l) at 0
-action : left_erase(0);
-         left_add(l == nil{Z});
+// Strategy 15 removed: requires no-circle assumption
+// id : 15
+// priority : core(0)
+// left : sllseg(?p, p, ?l) at 0
+// action : left_erase(0);
+//          left_add(l == nil{Z});
 
 id : 16
 priority : core(1)
@@ -82,11 +83,12 @@ right : sllbseg(?p, p, ?l) at 0
 action : right_erase(0);
          right_add(l == nil{Z});
 
-id : 21
-priority : core(0)
-left : sllbseg(?p, p, ?l) at 0
-action : left_erase(0);
-         left_add(l == nil{Z});
+// Strategy 21 removed: requires no-circle assumption
+// id : 21
+// priority : core(0)
+// left : sllbseg(?p, p, ?l) at 0
+// action : left_erase(0);
+//          left_add(l == nil{Z});
 
 id : 22
 priority : core(1)
@@ -110,28 +112,30 @@ action : left_erase(0);
          left_add(sll(h, l));
 
 // sllb unfold rules - right side
-id : 33
-priority : core(3)
-right : sllb(?p, ?l) at 0
-action : right_erase(0);
-         right_exist_add(h);
-         right_exist_add(pt);
-         right_add(p != 0);
-         right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
-         right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
-         right_add(sll(h, l));
+// Strategy 33 removed: loses tail pointer information during fold back
+// id : 33
+// priority : core(3)
+// right : sllb(?p, ?l) at 0
+// action : right_erase(0);
+//          right_exist_add(h);
+//          right_exist_add(pt);
+//          right_add(p != 0);
+//          right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+//          right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
+//          right_add(sll(h, l));
 
 // sllb fold rules
-id : 34
-priority : fold_sllb(0)
-left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
-       data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), ?pt) at 1
-       sll(h, ?l) at 2
-       (p != NULL || NULL != p) at 3
-action : left_erase(0);
-         left_erase(1);
-         left_erase(2);
-         left_add(sllb(p, l));
+// Strategy 34 removed: cannot prove without additional constraints
+// id : 34
+// priority : fold_sllb(0)
+// left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
+//        data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), ?pt) at 1
+//        sll(h, ?l) at 2
+//        (p != NULL || NULL != p) at 3
+// action : left_erase(0);
+//          left_erase(1);
+//          left_erase(2);
+//          left_add(sllb(p, l));
 
 // map_mult rules
 id : 40
@@ -304,13 +308,14 @@ action : right_erase(1);
          left_erase(0);
 
 // Combine ceil_shape with data_at (after array write)
-id : 89
-priority : post(1)
-left : UIntArray::ceil_shape(?p, ?y, ?z) at 0
-       data_at(p + (z * sizeof(U32)), U32, ?v) at 1
-action : left_erase(1);
-         left_erase(0);
-         left_add(UIntArray::ceil_shape(p, y, z + 1));
+// Strategy 89 removed: requires range condition y <= z that cannot be proven
+// id : 89
+// priority : post(1)
+// left : UIntArray::ceil_shape(?p, ?y, ?z) at 0
+//        data_at(p + (z * sizeof(U32)), U32, ?v) at 1
+// action : left_erase(1);
+//          left_erase(0);
+//          left_add(UIntArray::ceil_shape(p, y, z + 1));
 
 // Eliminate ceil_shape(0, Zlength(nil)) - special case for loop init
 id : 90

@@ -116,8 +116,6 @@ Proof.
   reflexivity.
 Qed.
 
-(* Strategy 34 removed from .strategies file - cannot prove without additional constraints *)
-
 Lemma sll_project_strategy7_correctness : sll_project_strategy7.
 Proof.
   pre_process_default.
@@ -321,8 +319,6 @@ Proof.
   entailer!.
   Qed.
 
-(* Strategy 89 removed from .strategies file - requires range condition y <= z that cannot be proven *)
-
 Lemma sll_project_strategy32_correctness : sll_project_strategy32.
 Proof.
   pre_process_default.
@@ -332,8 +328,6 @@ Proof.
   entailer!.
   apply elim_wand_emp_emp.
 Qed.
-
-(* Strategy 33 removed from .strategies file - loses tail pointer information during fold back *)
 
 Lemma sll_project_strategy70_correctness : sll_project_strategy70.
 Proof.

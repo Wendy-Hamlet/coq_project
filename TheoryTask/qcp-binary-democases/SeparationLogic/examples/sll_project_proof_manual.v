@@ -77,10 +77,75 @@ Qed.
 Lemma proof_of_map_list_which_implies_wit_1 : map_list_which_implies_wit_1.
 Proof.
   pre_process.
+  (* p <> 0 and sll p l2, so l2 must be non-empty *)
   destruct l2 as [ | a l0].
-  - simpl sll. Intros. tauto.
-  - simpl sll. Intros. Intros y.
-    Exists y a l0. entailer!.
+  - (* l2 = nil, but p <> 0, contradiction *)
+    simpl sll. Intros. tauto.
+  - (* l2 = a :: l0 *)
+    simpl sll. Intros. Intros y.
+    Exists y a l0.
+    entailer!.
+Qed. 
+
+Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
+Proof.
+  pre_process.
+  (* l = nil from hypothesis, so new list is data_pre :: nil *)
+  subst l.
+  (* sll retval [data_pre] = retval <> NULL /\ EX y, &(retval->data) |-> data_pre ** &(retval->next) |-> y ** sll y nil *)
+  simpl sll.
+  Intros next_val.
+  simpl sll.
+  Intros. subst next_val.
+  (* Now we know &(retval->next) |-> NULL *)
+  (* Choose pt_new = &(retval->next) which matches store(&(box->ptail), &(retval->next)) *)
+  Exists (&(retval # "sll" ->ₛ "next")).
+  simpl sllbseg.
+  Exists retval.
+  simpl sllbseg.
+  entailer!.
+Qed. 
+
+Lemma proof_of_cons_list_box_return_wit_2 : cons_list_box_return_wit_2.
+Proof.
+  pre_process.
+  (* l <> nil from hypothesis, so original list was non-empty *)
+  (* box->ptail stays at pt (not updated) *)
+  (* Use sll_2_sllbseg to convert sll to sllbseg *)
+  sep_apply (sll_2_sllbseg (&(box_pre # "sllb" ->ₛ "head")) retval (data_pre :: l)).
+  Intros pt_new.
+  Exists pt_new.
+  entailer!.
+Qed. 
+
+Lemma proof_of_cons_list_box_which_implies_wit_1 : cons_list_box_which_implies_wit_1.
+Proof.
+  pre_process.
+  (* Use sllbseg_0_sll' to convert sllbseg + store(pt, 0) to store + sll *)
+  sep_apply (sllbseg_0_sll' (&(box # "sllb" ->ₛ "head")) pt l).
+  Intros h.
+  Exists h.
+  entailer!.
+Qed. 
+
+Lemma proof_of_map_list_box_return_wit_1 : map_list_box_return_wit_1.
+Proof.
+  pre_process.
+  (* Use sll_2_sllbseg to convert sll to sllbseg *)
+  sep_apply (sll_2_sllbseg (&(box_pre # "sllb" ->ₛ "head")) h (map_mult x_pre l)).
+  Intros pt_new.
+  Exists pt_new.
+  entailer!.
+Qed. 
+
+Lemma proof_of_map_list_box_which_implies_wit_1 : map_list_box_which_implies_wit_1.
+Proof.
+  pre_process.
+  (* Use sllbseg_0_sll' to convert sllbseg + store(pt, 0) to store + sll *)
+  sep_apply (sllbseg_0_sll' (&(box # "sllb" ->ₛ "head")) pt l).
+  Intros h.
+  Exists h.
+  entailer!.
 Qed. 
 
 Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
@@ -199,12 +264,19 @@ Proof.
   pre_process.
   Exists (l1_2 ++ p_data :: nil) l3.
   entailer!.
-  - sep_apply sllseg_len1; try easy.
+  - (* Separation logic goal: sllseg + ceil_shape *)
+    (* First handle ceil_shape extension *)
+    sep_apply (UIntArray.ceil_shape_single arr i p_data).
+    sep_apply (UIntArray.ceil_shape_merge_to_ceil_shape arr 0 i (i+1)); try lia.
+    (* Now handle sllseg extension *)
+    sep_apply sllseg_len1; try easy.
     rewrite logic_equiv_sepcon_comm.
     sep_apply sllseg_sllseg.
     entailer!.
-  - rewrite Zlength_app, Zlength_cons, Zlength_nil. lia.
-  - rewrite H2, H. rewrite <- app_assoc. simpl. reflexivity.
+  - (* Zlength part *)
+    rewrite Zlength_app, Zlength_cons, Zlength_nil. lia.
+  - (* app part *)
+    rewrite H2, H. rewrite <- app_assoc. simpl. reflexivity.
 Qed.
 
 Lemma proof_of_sll2array_return_wit_1 : sll2array_return_wit_1.
@@ -262,5 +334,21 @@ Qed.
 
 Lemma proof_of_sllb2array_return_wit_1 : sllb2array_return_wit_1.
 Proof.
-Admitted. 
+  pre_process.
+  (* Use sll_2_sllbseg to convert sll to sllbseg *)
+  sep_apply (sll_2_sllbseg (&(box_pre # "sllb" ->ₛ "head")) h l).
+  Intros pt_new.
+  Exists arr_ret_2 pt_new.
+  entailer!.
+Qed. 
+
+Lemma proof_of_sllb2array_which_implies_wit_1 : sllb2array_which_implies_wit_1.
+Proof.
+  pre_process.
+  (* Use sllbseg_0_sll' to convert sllbseg + store(pt, 0) to store + sll *)
+  sep_apply (sllbseg_0_sll' (&(box # "sllb" ->ₛ "head")) pt l).
+  Intros h.
+  Exists h.
+  entailer!.
+Qed. 
 
