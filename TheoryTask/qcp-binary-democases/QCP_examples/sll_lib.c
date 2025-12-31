@@ -126,22 +126,17 @@ struct sllb *cons_list_box(unsigned int data, struct sllb *box)
 }
 
 struct sllb *map_list_box(struct sllb *box, unsigned int x)
-/*@ With l pt
-    Require box != 0 &&
-            (pt == &(box -> head) && l == nil || pt != &(box -> head) && l != nil) &&
-            store(&(box -> ptail), struct sll **, pt) *
-            sllbseg(&(box -> head), pt, l) *
-            store(pt, struct sll *, 0)
-    Ensure exists pt_new,
-           __return != 0 &&
-           store(&(__return -> ptail), struct sll **, pt_new) *
-           sllbseg(&(__return -> head), pt_new, map_mult(x, l)) *
-           store(pt_new, struct sll *, 0)
+/*@ With l
+    Require sllb_sll(box, l)
+    Ensure sllb_sll(__return, map_mult(x, l))
 */
 {
-  /*@ sllbseg(&(box -> head), pt, l) * store(pt, struct sll *, 0)
+  /*@ sllb_sll(box, l)
       which implies
-      exists h, store(&(box -> head), struct sll *, h) * sll(h, l)
+      exists h, box != 0 &&
+          store(&(box -> head), struct sll *, h) *
+          store(&(box -> ptail), struct sll **, 0) *
+          sll(h, l)
   */
   map_list(box->head, x);
   return box;
@@ -259,24 +254,21 @@ unsigned int sll2array(struct sll *head, unsigned int **out_array)
 }
 
 unsigned int sllb2array(struct sllb *box, unsigned int **out_array)
-/*@ With l pt b out
-    Require b == box && out == out_array && box != 0 && Zlength(l) <= 2147483647 &&
-            (pt == &(box -> head) && l == nil || pt != &(box -> head) && l != nil) &&
-            store(&(box -> ptail), struct sll **, pt) *
-            sllbseg(&(box -> head), pt, l) *
-            store(pt, struct sll *, 0) *
+/*@ With l
+    Require sllb_sll(box, l) && Zlength(l) <= 2147483647 &&
             undef_data_at(out_array, unsigned int *)
-    Ensure exists arr_ret pt_new,
-           store(&(b -> ptail), struct sll **, pt_new) *
-           sllbseg(&(b -> head), pt_new, l) *
-           store(pt_new, struct sll *, 0) *
-           store(out, unsigned int *, arr_ret) *
+    Ensure exists arr_ret,
+           sllb_sll(box@pre, l) *
+           store(out_array@pre, unsigned int *, arr_ret) *
            UIntArray::full_shape(arr_ret, Zlength(l))
 */
 {
-  /*@ sllbseg(&(box -> head), pt, l) * store(pt, struct sll *, 0)
+  /*@ sllb_sll(box, l)
       which implies
-      exists h, store(&(box -> head), struct sll *, h) * sll(h, l)
+      exists h, box != 0 &&
+          store(&(box -> head), struct sll *, h) *
+          store(&(box -> ptail), struct sll **, 0) *
+          sll(h, l)
   */
   return sll2array(box->head, out_array);
 }

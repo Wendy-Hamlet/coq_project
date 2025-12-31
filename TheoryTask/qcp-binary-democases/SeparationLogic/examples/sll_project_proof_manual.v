@@ -37,7 +37,7 @@ Proof.
     simpl sllbseg.
     Exists next_pre.
     entailer!.
-    discriminate.  
+    discriminate.
 Qed.
 
 Lemma proof_of_free_list_return_wit_1 : free_list_return_wit_1.
@@ -95,9 +95,8 @@ Proof.
   destruct l2 as [ | a l0].
   - simpl sll. Intros. tauto.
   - simpl sll. Intros. Intros y.
-    Exists y a l0.
-    entailer!.
-Qed. 
+    Exists y a l0. entailer!.
+Qed.
 
 Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
 Proof.
@@ -131,39 +130,6 @@ Lemma proof_of_cons_list_box_which_implies_wit_1 : cons_list_box_which_implies_w
 Proof.
   pre_process.
   sep_apply (sllbseg_0_sll_pt (&(box # "sllb" ->ₛ "head")) pt l).
-  Intros h.
-  Exists h.
-  entailer!.
-Qed. 
-
-Lemma proof_of_map_list_box_return_wit_1 : map_list_box_return_wit_1.
-Proof.
-  pre_process.
-  (* l = nil, pt = &(box->head), map_mult x nil = nil *)
-  subst l pt.
-  simpl map_mult.
-  simpl sll. Intros. subst h.
-  Exists (&(box_pre # "sllb" ->ₛ "head")).
-  simpl sllbseg.
-  entailer!.
-Qed. 
-
-Lemma proof_of_map_list_box_return_wit_2 : map_list_box_return_wit_2.
-Proof.
-  pre_process.
-  (* l <> nil, use sll_2_sllbseg *)
-  sep_apply (sll_2_sllbseg (&(box_pre # "sllb" ->ₛ "head")) h (map_mult x_pre l)).
-  Intros pt_new.
-  Exists pt_new.
-  entailer!.
-  (* pt_new from sll_2_sllbseg should equal pt, but this is the precision problem *)
-  (* The list structure is unchanged by map, so pt_new = pt semantically *)
-Admitted. 
-
-Lemma proof_of_map_list_box_which_implies_wit_1 : map_list_box_which_implies_wit_1.
-Proof.
-  pre_process.
-  sep_apply (sllbseg_0_sll' (&(box # "sllb" ->ₛ "head")) pt l).
   Intros h.
   Exists h.
   entailer!.
@@ -217,9 +183,10 @@ Proof.
   Exists (l1_2 ++ (head_data :: nil)) l3.
   simpl.
   entailer!.
-  - sep_apply sllseg_len1; try easy.
-    rewrite logic_equiv_sepcon_comm.
+  sep_apply sllseg_len1.
+  - rewrite logic_equiv_sepcon_comm.
     sep_apply sllseg_sllseg. entailer!.
+  - entailer!.
   - rewrite Zlength_app. rewrite Zlength_cons, Zlength_nil.
     rewrite <- H2.
     apply unsigned_last_nbits_eq.
@@ -250,7 +217,7 @@ Proof.
   - simpl sll. Intros. tauto.
   - simpl sll. Intros. Intros x.
     Exists x a l0. entailer!.
-Qed. 
+Qed.
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
 Proof.
@@ -269,11 +236,13 @@ Proof.
   pre_process.
   Exists (l1_2 ++ p_data :: nil) l3.
   entailer!.
-  - sep_apply (UIntArray.ceil_shape_single arr i p_data).
-    sep_apply (UIntArray.ceil_shape_merge_to_ceil_shape arr 0 i (i+1)); try lia.
-    sep_apply sllseg_len1; try easy.
+  - sep_apply sllseg_len1; try easy.
     rewrite logic_equiv_sepcon_comm.
     sep_apply sllseg_sllseg.
+    entailer!.
+    sep_apply UIntArray.ceil_single.
+    sep_apply UIntArray.ceil_to_ceil_shape.
+    sep_apply (UIntArray.ceil_shape_merge_to_ceil_shape arr 0 i (i + 1)); try lia.
     entailer!.
   - rewrite Zlength_app, Zlength_cons, Zlength_nil. lia.
   - rewrite H2, H. rewrite <- app_assoc. simpl. reflexivity.
@@ -289,7 +258,8 @@ Proof.
   subst l.
   Exists arr.
   sep_apply sllseg_0_sll.
-  rewrite H1, H2.
+  rewrite H1.
+  rewrite H2.
   rewrite (UIntArray.undef_ceil_empty arr (Zlength l1)).
   sep_apply (UIntArray.ceil_shape_to_full_shape arr 0 (Zlength l1)).
   replace (arr + 0 * sizeof(UINT)) with arr by lia.
@@ -318,36 +288,3 @@ Proof.
     Exists y a l0.
     entailer!.
 Qed.
-
-Lemma proof_of_sllb2array_return_wit_1 : sllb2array_return_wit_1.
-Proof.
-  pre_process.
-  (* l <> nil, use sll_2_sllbseg *)
-  subst b out.
-  sep_apply (sll_2_sllbseg (&(box_pre # "sllb" ->ₛ "head")) h l).
-  Intros pt_new.
-  Exists arr_ret_2 pt_new.
-  entailer!.
-  (* Precision problem: pt_new from sll_2_sllbseg should equal pt *)
-Admitted. 
-
-Lemma proof_of_sllb2array_return_wit_2 : sllb2array_return_wit_2.
-Proof.
-  pre_process.
-  (* l = nil, pt = &(box->head) *)
-  subst b out l pt.
-  simpl sll. Intros. subst h.
-  Exists arr_ret_2 (&(box_pre # "sllb" ->ₛ "head")).
-  simpl sllbseg.
-  entailer!.
-Qed. 
-
-Lemma proof_of_sllb2array_which_implies_wit_1 : sllb2array_which_implies_wit_1.
-Proof.
-  pre_process.
-  sep_apply (sllbseg_0_sll' (&(box # "sllb" ->ₛ "head")) pt l).
-  Intros h.
-  Exists h.
-  entailer!.
-Qed. 
-

@@ -137,6 +137,53 @@ action : left_erase(0);
 //          left_erase(2);
 //          left_add(sllb(p, l));
 
+// =====================
+// sllb_sll rules (sll-based sllb for nested function calls)
+// =====================
+
+// sllb_sll unfold - left side
+id : 35
+priority : core(3)
+left : sllb_sll(?p, ?l) at 0
+action : left_erase(0);
+         left_exist_add(h);
+         left_add(p != 0);
+         left_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         left_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL));
+         left_add(sll(h, l));
+
+// sllb_sll unfold - right side
+id : 36
+priority : core(3)
+right : sllb_sll(?p, ?l) at 0
+action : right_erase(0);
+         right_exist_add(h);
+         right_add(p != 0);
+         right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL));
+         right_add(sll(h, l));
+
+// sllb_sll fold - from components
+id : 37
+priority : fold_sllb_sll(0)
+left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
+       data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL) at 1
+       sll(h, ?l) at 2
+       (p != 0 || 0 != p) at 3
+action : left_erase(0);
+         left_erase(1);
+         left_erase(2);
+         left_add(sllb_sll(p, l));
+
+// sllb_sll matching
+id : 38
+priority : core(1)
+left : sllb_sll(?p, ?l0) at 0
+right : sllb_sll(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
 // map_mult rules
 id : 40
 priority : core(0)

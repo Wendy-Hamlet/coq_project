@@ -267,6 +267,27 @@ Definition sll_project_strategy61 :=
     emp
     ).
 
+Definition sll_project_strategy37 :=
+  forall (p : Z) (h : Z) (l : (@list Z)),
+    TT &&
+    ([| (p <> 0) |] || [| (0 <> p) |]) &&
+    emp **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
+    ((sll h l))
+    |--
+    (
+    TT &&
+    ([| (p <> 0) |] || [| (0 <> p) |]) &&
+    emp **
+    ((sllb_sll p l))
+    ) ** (
+    TT &&
+    emp -*
+    TT &&
+    emp
+    ).
+
 Definition sll_project_strategy7 :=
   forall (p : Z) (l0 : (@list Z)),
     TT &&
@@ -341,6 +362,25 @@ Definition sll_project_strategy22 :=
       TT &&
       emp **
       ((sllbseg p q l1))
+      ).
+
+Definition sll_project_strategy38 :=
+  forall (p : Z) (l0 : (@list Z)),
+    TT &&
+    emp **
+    ((sllb_sll p l0))
+    |--
+    (
+    TT &&
+    emp
+    ) ** (
+    ALL (l1 : (@list Z)),
+      TT &&
+      ([| (l0 = l1) |]) &&
+      emp -*
+      TT &&
+      emp **
+      ((sllb_sll p l1))
       ).
 
 Definition sll_project_strategy72 :=
@@ -648,6 +688,47 @@ Definition sll_project_strategy32 :=
       emp
       ).
 
+Definition sll_project_strategy35 :=
+  forall (p : Z) (l : (@list Z)),
+    TT &&
+    emp **
+    ((sllb_sll p l))
+    |--
+    EX (h : Z),
+      (
+      TT &&
+      ([| (p <> 0) |]) &&
+      emp **
+      ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
+      ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
+      ((sll h l))
+      ) ** (
+      TT &&
+      emp -*
+      TT &&
+      emp
+      ).
+
+Definition sll_project_strategy36 :=
+  TT &&
+  emp
+  |--
+  (
+  TT &&
+  emp
+  ) ** (
+  ALL (p : Z) (h : Z) (l : (@list Z)),
+    TT &&
+    ([| (p <> 0) |]) &&
+    emp **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
+    ((sll h l)) -*
+    TT &&
+    emp **
+    ((sllb_sll p l))
+    ).
+
 Definition sll_project_strategy70 :=
   forall (i : Z) (n : Z) (p : Z),
     TT &&
@@ -685,10 +766,12 @@ Module Type sll_project_Strategy_Correct.
   Axiom sll_project_strategy52_correctness : sll_project_strategy52.
   Axiom sll_project_strategy60_correctness : sll_project_strategy60.
   Axiom sll_project_strategy61_correctness : sll_project_strategy61.
+  Axiom sll_project_strategy37_correctness : sll_project_strategy37.
   Axiom sll_project_strategy7_correctness : sll_project_strategy7.
   Axiom sll_project_strategy16_correctness : sll_project_strategy16.
   Axiom sll_project_strategy30_correctness : sll_project_strategy30.
   Axiom sll_project_strategy22_correctness : sll_project_strategy22.
+  Axiom sll_project_strategy38_correctness : sll_project_strategy38.
   Axiom sll_project_strategy72_correctness : sll_project_strategy72.
   Axiom sll_project_strategy73_correctness : sll_project_strategy73.
   Axiom sll_project_strategy74_correctness : sll_project_strategy74.
@@ -706,6 +789,8 @@ Module Type sll_project_Strategy_Correct.
   Axiom sll_project_strategy93_correctness : sll_project_strategy93.
   Axiom sll_project_strategy71_correctness : sll_project_strategy71.
   Axiom sll_project_strategy32_correctness : sll_project_strategy32.
+  Axiom sll_project_strategy35_correctness : sll_project_strategy35.
+  Axiom sll_project_strategy36_correctness : sll_project_strategy36.
   Axiom sll_project_strategy70_correctness : sll_project_strategy70.
 
 End sll_project_Strategy_Correct.
