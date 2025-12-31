@@ -123,10 +123,8 @@ Proof.
   pre_process_default.
   unfold sllb_sll.
   Exists h.
-  prop_apply derivable1_or_intros1.
-  Intros.
+  unfold NULL.
   entailer!.
-  lia.
 Qed.
 
 Lemma sll_project_strategy7_correctness : sll_project_strategy7.

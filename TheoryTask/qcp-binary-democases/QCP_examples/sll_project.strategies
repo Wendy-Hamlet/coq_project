@@ -147,7 +147,7 @@ priority : core(3)
 left : sllb_sll(?p, ?l) at 0
 action : left_erase(0);
          left_exist_add(h);
-         left_add(p != 0);
+         left_add(p != NULL);
          left_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
          left_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL));
          left_add(sll(h, l));
@@ -158,7 +158,7 @@ priority : core(3)
 right : sllb_sll(?p, ?l) at 0
 action : right_erase(0);
          right_exist_add(h);
-         right_add(p != 0);
+         right_add(p != NULL);
          right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
          right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL));
          right_add(sll(h, l));
@@ -169,7 +169,7 @@ priority : fold_sllb_sll(0)
 left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
        data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), NULL) at 1
        sll(h, ?l) at 2
-       (p != 0 || 0 != p) at 3
+       (p != NULL || NULL != p) at 3
 action : left_erase(0);
          left_erase(1);
          left_erase(2);
