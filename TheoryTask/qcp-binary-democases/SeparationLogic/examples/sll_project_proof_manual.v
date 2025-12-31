@@ -164,8 +164,10 @@ Qed.
 Lemma proof_of_app_list_box_which_implies_wit_1 : app_list_box_which_implies_wit_1.
 Proof.
   pre_process.
-  sep_apply (app_list_box_which_implies_valid b1 b2 l1 l2).
-  Intros pt1 h2 pt2.
+  sep_apply (sllb_2_sllbseg b1 l1).
+  Intros pt1.
+  sep_apply (sllb_to_store_sll_pt b2 l2).
+  Intros h2 pt2.
   Exists pt2 h2 pt1.
   entailer!.
 Qed. 
