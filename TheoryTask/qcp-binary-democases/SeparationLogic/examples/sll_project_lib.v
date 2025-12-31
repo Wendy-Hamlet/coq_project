@@ -221,23 +221,6 @@ Proof.
   + Intros u. Exists u. entailer!.
 Qed.
 
-(* Extend sllbseg by one element at the end *)
-Lemma sllbseg_extend: forall x cur node a l1,
-  node <> NULL ->
-  sllbseg x cur l1 **
-  cur # Ptr |-> node **
-  &(node # "sll" ->ₛ "data") # UInt |-> a |--
-  sllbseg x (&(node # "sll" ->ₛ "next")) (l1 ++ [a]).
-Proof.
-  intros.
-  sep_apply (sllbseg_len1 cur node a H).
-  (* Now we have: sllbseg x cur l1 ** sllbseg cur &(node->next) [a]
-     Need to reorder for sllbseg_sllbseg *)
-  rewrite logic_equiv_sepcon_comm.
-  sep_apply sllbseg_sllbseg.
-  entailer!.
-Qed.
-
 Lemma sllbseg_2_sllseg: forall x y z l,
   sllbseg x y l ** y # Ptr |-> z |--
   EX y': addr, x # Ptr |-> y' ** sllseg y' z l.
@@ -280,40 +263,6 @@ Qed.
 (* ============================================================ *)
 (* Lemmas for sllb *)
 (* ============================================================ *)
-
-Lemma sllb_zero: forall x,
-  sllb x nil |--
-  [| x <> NULL |] &&
-  &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> &(x # "sllb" ->ₛ "head").
-Proof.
-  intros. unfold sllb. simpl. entailer!.
-Qed.
-
-Lemma sllb_not_zero: forall x a l,
-  sllb x (a :: l) |--
-  EX head_val ptail_val: addr,
-    [| x <> NULL |] &&
-    [| head_val <> NULL |] &&
-    &(x # "sllb" ->ₛ "head") # Ptr |-> head_val **
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
-    &(head_val # "sll" ->ₛ "data") # UInt |-> a **
-    sllbseg (&(head_val # "sll" ->ₛ "next")) ptail_val l **
-    ptail_val # Ptr |-> NULL.
-Proof.
-  intros. unfold sllb.
-  Intros ptail_val. simpl sllbseg. Intros head_val.
-  Exists head_val ptail_val. entailer!.
-Qed.
-
-Lemma sllb_len1: forall x,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> &(x # "sllb" ->ₛ "head") |--
-  sllb x nil.
-Proof.
-  intros. unfold sllb. simpl. entailer!.
-Qed.
 
 Lemma sllb_2_sllbseg: forall x l,
   sllb x l |--
@@ -389,60 +338,6 @@ Qed.
 (* Additional lemmas for app_list_box *)
 (* ============================================================ *)
 
-(* When h2 = 0, l2 must be nil *)
-Lemma sll_zero_nil: forall h l,
-  h = NULL ->
-  sll h l |-- [| l = nil |].
-Proof.
-  intros. destruct l.
-  + entailer!.
-  + simpl. Intros. Intros y. entailer!.
-Qed.
-
-(* Rebuild sllb from store + sll after appending nil *)
-Lemma store_sll_2_sllb: forall x h pt l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  sll h l |--
-  EX pt_new: addr,
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-    sllbseg (&(x # "sllb" ->ₛ "head")) pt_new l **
-    pt_new # Ptr |-> NULL.
-Proof.
-  intros.
-  sep_apply (sll_2_sllb x h l H).
-  Intros ptail_new.
-  Exists ptail_new.
-  entailer!.
-Qed.
-
-(* Full reconstruction of sllb from store + sll *)
-Lemma store_sll_2_sllb_full: forall x h l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-  sll h l |--
-  EX pt_new: addr,
-    sllbseg (&(x # "sllb" ->ₛ "head")) pt_new l **
-    pt_new # Ptr |-> NULL.
-Proof.
-  intros.
-  sep_apply (sll_2_sllb x h l H).
-  Intros ptail_new.
-  Exists ptail_new.
-  entailer!.
-Qed.
-
-(* Connecting two slls via a pointer write *)
-Lemma sll_connect: forall h1 l1 h2 l2 pt,
-  sll h1 l1 ** pt # Ptr |-> h2 ** sll h2 l2 |--
-  EX h_new: addr,
-    sll h1 l1 ** pt # Ptr |-> h2 ** sll h2 l2.
-Proof.
-  intros.
-  Exists h1. entailer!.
-Qed.
-
 (* Directly fold sllb from components *)
 Lemma sllbseg_store_2_sllb: forall x pt l,
   x <> NULL ->
@@ -454,75 +349,6 @@ Proof.
   intros. unfold sllb. destruct l.
   + simpl sllbseg. Intros. subst pt. entailer!.
   + Exists pt. entailer!.
-Qed.
-
-(* For app_list_box: sllbseg + pt |-> h + sll h l2 => sllbseg of l1++l2 *)
-Lemma sllbseg_pt_sll: forall x pt l1 h l2,
-  sllbseg x pt l1 ** pt # Ptr |-> h ** sll h l2 |--
-  EX pt_new: addr, sllbseg x pt_new (l1 ++ l2) ** pt_new # Ptr |-> NULL.
-Proof.
-  intros.
-  sep_apply sllbseg_sll.
-  Intros head_val.
-  sep_apply (sll_2_sllbseg x head_val (l1 ++ l2)).
-  Intros pt_new.
-  Exists pt_new.
-  entailer!.
-Qed.
-
-(* For app_list_box return_wit_1: when h2 = 0 *)
-Lemma app_sllb_case_nil: forall x pt l1 l2,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  sllbseg (&(x # "sllb" ->ₛ "head")) pt l1 **
-  pt # Ptr |-> NULL **
-  sll NULL l2 |--
-  sllb x (l1 ++ l2).
-Proof.
-  intros.
-  assert (Hnil: NULL = NULL) by reflexivity.
-  sep_apply (sll_zero NULL l2 Hnil).
-  Intros. subst l2.
-  rewrite app_nil_r.
-  sep_apply (sllbseg_store_2_sllb x pt l1 H).
-  entailer!.
-Qed.
-
-(* For app_list_box return_wit_2: directly construct sllb using pt2 as final ptail *)
-(* Key insight: pt2 from sllb(b2, l2) IS the final ptail because sll(h2, l2)'s 
-   tail pointer position is exactly pt2. The sll_2_sllbseg gives the same pt. *)
-
-(* Direct folding into sllb when we have the right structure *)
-Lemma app_sllb_direct: forall x pt l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  sllbseg (&(x # "sllb" ->ₛ "head")) pt l **
-  pt # Ptr |-> NULL |--
-  sllb x l.
-Proof.
-  intros. unfold sllb. destruct l.
-  + simpl sllbseg. Intros. subst pt. entailer!.
-  + Exists pt. entailer!.
-Qed.
-
-(* For return_wit_2: Connect l1 and l2 using sll, then fold to sllb *)
-(* This uses sllbseg_pt_sll which gives EX pt_final, and we need to use that pt_final *)
-Lemma app_sllb_via_sll: forall x pt2 pt1 l1 h2 l2,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
-  sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 **
-  pt1 # Ptr |-> h2 **
-  sll h2 l2 |--
-  EX pt_final: addr,
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
-    sllbseg (&(x # "sllb" ->ₛ "head")) pt_final (l1 ++ l2) **
-    pt_final # Ptr |-> NULL.
-Proof.
-  intros.
-  sep_apply (sllbseg_pt_sll (&(x # "sllb" ->ₛ "head")) pt1 l1 h2 l2).
-  Intros pt_final.
-  Exists pt_final.
-  entailer!.
 Qed.
 
 (* ============================================================ *)
@@ -601,35 +427,6 @@ Proof.
     Exists head_val. simpl sll_pt. entailer!.
 Qed.
 
-(* Convert store + sll_pt back to sllbseg + store(pt, 0) for non-empty list *)
-Lemma sll_pt_to_sllbseg_nonempty: forall x h pt a l0,
-  x # Ptr |-> h ** sll_pt h pt (a :: l0) |--
-  sllbseg x pt (a :: l0) ** pt # Ptr |-> NULL.
-Proof.
-  intros. simpl sll_pt. Intros.
-  simpl sllbseg. Exists h. entailer!.
-Qed.
-
-(* For empty list: if x = pt, then we can convert *)
-Lemma sll_pt_to_sllbseg_nil: forall x h pt,
-  x = pt ->
-  x # Ptr |-> h ** sll_pt h pt nil |--
-  sllbseg x pt nil ** pt # Ptr |-> NULL.
-Proof.
-  intros. simpl sll_pt. Intros. subst h.
-  simpl sllbseg. subst x. entailer!.
-Qed.
-
-(* Convert sll_pt to sll (losing pt info) *)
-Lemma sll_pt_to_sll: forall h pt l,
-  sll_pt h pt l |-- sll h l.
-Proof.
-  intros. destruct l; simpl.
-  + entailer!.
-  + Intros. sep_apply sllbseg_0_sll'. Intros next.
-    Exists next. entailer!.
-Qed.
-
 (* sllb can be expressed as store + sll_pt *)
 Lemma sllb_to_store_sll_pt: forall x l,
   sllb x l |--
@@ -646,30 +443,6 @@ Proof.
   + (* cons case *)
     Intros ptail_val. simpl sllbseg. Intros head_val.
     Exists head_val ptail_val. simpl sll_pt. entailer!.
-Qed.
-
-(* Reconstruct sllb from store + sll_pt - non-empty case only *)
-(* For empty list, pt must equal &(x->head), which is handled separately *)
-Lemma store_sll_pt_to_sllb_nonempty: forall x h pt a l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
-  sll_pt h pt (a :: l) |--
-  sllb x (a :: l).
-Proof.
-  intros. unfold sllb. simpl sll_pt. simpl.
-  Intros. Exists pt. simpl sllbseg. Exists h. entailer!.
-Qed.
-
-(* Reconstruct sllb from store + sll_pt - empty case *)
-(* Note: pt must be &(x->head) for empty list *)
-Lemma store_sll_pt_to_sllb_empty: forall x,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> (&(x # "sllb" ->ₛ "head")) |--
-  sllb x nil.
-Proof.
-  intros. unfold sllb. simpl. entailer!.
 Qed.
 
 (* ============================================================ *)

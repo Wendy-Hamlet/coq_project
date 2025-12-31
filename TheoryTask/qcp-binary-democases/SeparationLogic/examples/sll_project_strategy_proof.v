@@ -386,5 +386,5 @@ Proof.
   - entailer!.
     apply derivable1_wand_sepcon_adjoint.
     entailer!.
-  - lia. 
+  - lia.
 Qed.
