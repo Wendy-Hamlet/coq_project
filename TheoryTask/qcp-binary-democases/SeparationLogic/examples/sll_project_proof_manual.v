@@ -24,14 +24,12 @@ Proof.
   pre_process.
   unfold sll_pt.
   destruct l.
-  - (* l = nil: choose right branch of || *)
-    Intros. subst next_pre.
+  - Intros. subst next_pre.
     Right.
     Exists (&(retval # "sll" ->ₛ "next")).
     simpl sllbseg.
     entailer!.
-  - (* l = z :: l: choose left branch of || *)
-    Intros.
+  - Intros.
     Left.
     Exists pt.
     simpl sllbseg.

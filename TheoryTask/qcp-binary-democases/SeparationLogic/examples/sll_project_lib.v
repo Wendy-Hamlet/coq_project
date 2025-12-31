@@ -334,19 +334,6 @@ Proof.
 Qed.
 
 (* Fold sllbseg back to sllb *)
-Lemma sllbseg_2_sllb: forall x ptail_val l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
-  sllbseg (&(x # "sllb" ->ₛ "head")) ptail_val l **
-  ptail_val # Ptr |-> NULL |--
-  sllb x l.
-Proof.
-  intros. unfold sllb. destruct l.
-  + simpl sllbseg. Intros. subst ptail_val. entailer!.
-  + Exists ptail_val. entailer!.
-Qed.
-
-(* Alias for sllbseg_2_sllb with different argument order *)
 Lemma sllbseg_store_2_sllb: forall x pt l,
   x <> NULL ->
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
@@ -357,45 +344,4 @@ Proof.
   intros. unfold sllb. destruct l.
   + simpl sllbseg. Intros. subst pt. entailer!.
   + Exists pt. entailer!.
-Qed.
-
-(* Convert sll to sllbseg *)
-Lemma sll_2_sllbseg: forall x h l,
-  x # Ptr |-> h ** sll h l |--
-  EX pt: addr, sllbseg x pt l ** pt # Ptr |-> NULL.
-Proof.
-  intros. revert x h; induction l; simpl; intros.
-  + Intros. subst h. Exists x. simpl sllbseg. entailer!.
-  + Intros. Intros next.
-    sep_apply (IHl (&(h # "sll" ->ₛ "next")) next).
-    Intros pt. Exists pt. simpl sllbseg. Exists h. entailer!.
-Qed.
-
-Lemma sll_2_sllb: forall x h l,
-  x <> NULL ->
-  &(x # "sllb" ->ₛ "head") # Ptr |-> h ** sll h l |--
-  EX ptail_new: addr,
-    sllbseg (&(x # "sllb" ->ₛ "head")) ptail_new l **
-    ptail_new # Ptr |-> NULL.
-Proof.
-  intros.
-  sep_apply (sll_2_sllbseg (&(x # "sllb" ->ₛ "head")) h l).
-  Intros pt_new. Exists pt_new. entailer!.
-Qed.
-
-(* For app_list_box return_wit_2: append non-empty l2 to l1 *)
-Lemma app_sllb_nonempty_direct: forall x pt1 l1 pt2 h2 a l2,
-  x <> NULL -> h2 <> NULL ->
-  &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt2 **
-  sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 **
-  pt1 # Ptr |-> h2 ** 
-  &(h2 # "sll" ->ₛ "data") # UInt |-> a **
-  sllbseg (&(h2 # "sll" ->ₛ "next")) pt2 l2 **
-  pt2 # Ptr |-> NULL |--
-  sllb x (l1 ++ a :: l2).
-Proof.
-  intros.
-  sep_apply (sllbseg_append_sllbseg (&(x # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 a l2 H0).
-  sep_apply (sllbseg_store_2_sllb x pt2 (l1 ++ a :: l2) H).
-  entailer!.
 Qed.
