@@ -140,7 +140,7 @@ Proof.
   destruct l2.
   + Intros. subst h2.
     rewrite app_nil_r.
-    sep_apply (sllbseg_store_2_sllb b1_pre pt1 l1).
+    sep_apply (sllbseg_2_sllb b1_pre pt1 l1).
     entailer!.
     rewrite <- H2.
     tauto.
@@ -155,7 +155,7 @@ Proof.
   + Intros. tauto.
   + Intros.
     sep_apply (sllbseg_append_sllbseg (&(b1_pre # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 z l2 H).
-    sep_apply (sllbseg_store_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
+    sep_apply (sllbseg_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
     entailer!.
 Qed.
 
@@ -164,7 +164,7 @@ Proof.
   pre_process.
   sep_apply (sllb_2_sllbseg b1 l1).
   Intros pt1.
-  sep_apply (sllb_to_store_sll_pt b2 l2).
+  sep_apply (sllb_2_sll_pt b2 l2).
   Intros h2 pt2.
   Exists pt2 h2 pt1.
   entailer!.

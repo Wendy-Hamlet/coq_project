@@ -318,7 +318,7 @@ Proof.
 Qed.
 
 (* Unfold sllb to sll_pt form (preserves ptail) *)
-Lemma sllb_to_store_sll_pt: forall x l,
+Lemma sllb_2_sll_pt: forall x l,
   sllb x l |--
   EX h pt: addr,
     [| x <> NULL |] &&
@@ -334,7 +334,7 @@ Proof.
 Qed.
 
 (* Fold sllbseg back to sllb *)
-Lemma sllbseg_store_2_sllb: forall x pt l,
+Lemma sllbseg_2_sllb: forall x pt l,
   x <> NULL ->
   &(x # "sllb" ->ₛ "ptail") # Ptr |-> pt **
   sllbseg (&(x # "sllb" ->ₛ "head")) pt l **
