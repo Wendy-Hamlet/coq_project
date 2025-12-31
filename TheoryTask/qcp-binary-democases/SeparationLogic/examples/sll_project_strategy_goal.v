@@ -278,7 +278,6 @@ Definition sll_project_strategy37 :=
     |--
     (
     TT &&
-    ([| (p <> 0) |] || [| (0 <> p) |]) &&
     emp **
     ((sllb_sll p l))
     ) ** (

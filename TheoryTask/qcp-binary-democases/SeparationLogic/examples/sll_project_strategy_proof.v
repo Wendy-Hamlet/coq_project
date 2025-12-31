@@ -123,7 +123,6 @@ Proof.
   pre_process_default.
   unfold sllb_sll.
   Exists h.
-  unfold NULL.
   entailer!.
 Qed.
 

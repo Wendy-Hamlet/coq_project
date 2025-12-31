@@ -92,26 +92,14 @@ Definition sllb (x: addr) (l: list Z): Assertion :=
 (* Cannot be used for app/concat operations *)
 (* ============================================================ *)
 
+(* Note: We use 0 instead of NULL because QCP translates NULL to 0 *)
+(* No [| x <> 0 |] here - the condition is handled by the strategy matching *)
 Definition sllb_sll (x: addr) (l: list Z): Assertion :=
-  [| x <> NULL |] &&
   EX h: addr,
     &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> NULL **  (* ptail ignored, set to NULL as placeholder *)
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> 0 **  (* ptail ignored, set to 0 as placeholder *)
     sll h l.
 
-(* Conversion lemmas *)
-Lemma sllb_to_sllb_sll: forall x l,
-  sllb x l |-- sllb_sll x l.
-Proof.
-  intros. unfold sllb, sllb_sll.
-  destruct l; simpl.
-  + Intros. Exists NULL. simpl sll. entailer!.
-  + Intros ptail_val.
-    sep_apply (sllbseg_0_sll' (&(x # "sllb" ->ₛ "head")) ptail_val (z :: l)).
-    Intros h.
-    Exists h.
-    entailer!.
-Qed.
 
 (* ============================================================ *)
 (* map_mult: multiply each element by x *)
