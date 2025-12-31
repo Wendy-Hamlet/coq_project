@@ -270,7 +270,7 @@ Definition sll_project_strategy61 :=
 Definition sll_project_strategy37 :=
   forall (p : Z) (h : Z) (l : (@list Z)),
     TT &&
-    ([| (p <> 0) |] || [| (0 <> p) |]) &&
+    ([| (p <> 0) |]) &&
     emp **
     ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
     ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **

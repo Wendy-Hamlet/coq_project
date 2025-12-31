@@ -93,8 +93,8 @@ Definition sllb (x: addr) (l: list Z): Assertion :=
 (* ============================================================ *)
 
 (* Note: We use 0 instead of NULL because QCP translates NULL to 0 *)
-(* No [| x <> 0 |] here - the condition is handled by the strategy matching *)
 Definition sllb_sll (x: addr) (l: list Z): Assertion :=
+  [| x <> 0 |] &&
   EX h: addr,
     &(x # "sllb" ->ₛ "head") # Ptr |-> h **
     &(x # "sllb" ->ₛ "ptail") # Ptr |-> 0 **  (* ptail ignored, set to 0 as placeholder *)

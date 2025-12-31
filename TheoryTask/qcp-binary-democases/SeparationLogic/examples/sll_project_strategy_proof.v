@@ -363,7 +363,6 @@ Lemma sll_project_strategy36_correctness : sll_project_strategy36.
 Proof.
   pre_process_default.
   entailer!.
-  apply derivable1_wand_sepcon_adjoint.
   unfold sllb_sll.
   Exists h.
   entailer!.
