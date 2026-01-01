@@ -95,23 +95,6 @@ Definition sll_project_strategy14 :=
     ((sllseg p p l))
     ).
 
-Definition sll_project_strategy15 :=
-  forall (l : (@list Z)) (p : Z),
-    TT &&
-    emp **
-    ((sllseg p p l))
-    |--
-    (
-    TT &&
-    ([| (l = (@nil Z)) |]) &&
-    emp
-    ) ** (
-    TT &&
-    emp -*
-    TT &&
-    emp
-    ).
-
 Definition sll_project_strategy31 :=
   forall (p : Z),
     TT &&
@@ -144,23 +127,6 @@ Definition sll_project_strategy20 :=
     TT &&
     emp **
     ((sllbseg p p l))
-    ).
-
-Definition sll_project_strategy21 :=
-  forall (l : (@list Z)) (p : Z),
-    TT &&
-    emp **
-    ((sllbseg p p l))
-    |--
-    (
-    TT &&
-    ([| (l = (@nil Z)) |]) &&
-    emp
-    ) ** (
-    TT &&
-    emp -*
-    TT &&
-    emp
     ).
 
 Definition sll_project_strategy40 :=
@@ -301,20 +267,19 @@ Definition sll_project_strategy61 :=
     emp
     ).
 
-Definition sll_project_strategy34 :=
-  forall (p : Z) (pt : Z) (h : Z) (l : (@list Z)),
+Definition sll_project_strategy37 :=
+  forall (p : Z) (h : Z) (l : (@list Z)),
     TT &&
-    ([| (p <> 0) |] || [| (0 <> p) |]) &&
+    ([| (p <> 0) |]) &&
     emp **
     ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
-    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") pt)) **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
     ((sll h l))
     |--
     (
     TT &&
-    ([| (p <> 0) |] || [| (0 <> p) |]) &&
     emp **
-    ((sllb p l))
+    ((sllb_sll p l))
     ) ** (
     TT &&
     emp -*
@@ -396,6 +361,25 @@ Definition sll_project_strategy22 :=
       TT &&
       emp **
       ((sllbseg p q l1))
+      ).
+
+Definition sll_project_strategy38 :=
+  forall (p : Z) (l0 : (@list Z)),
+    TT &&
+    emp **
+    ((sllb_sll p l0))
+    |--
+    (
+    TT &&
+    emp
+    ) ** (
+    ALL (l1 : (@list Z)),
+      TT &&
+      ([| (l0 = l1) |]) &&
+      emp -*
+      TT &&
+      emp **
+      ((sllb_sll p l1))
       ).
 
 Definition sll_project_strategy72 :=
@@ -682,24 +666,6 @@ Definition sll_project_strategy71 :=
     emp
     ).
 
-Definition sll_project_strategy89 :=
-  forall (y : Z) (v : Z) (z : Z) (p : Z),
-    TT &&
-    emp **
-    ((UIntArray.ceil_shape p y z)) **
-    ((poly_store FET_uint (Z.add p (Z.mul z (@sizeof_front_end_type FET_uint))) v))
-    |--
-    (
-    TT &&
-    emp **
-    ((UIntArray.ceil_shape p y (Z.add z 1)))
-    ) ** (
-    TT &&
-    emp -*
-    TT &&
-    emp
-    ).
-
 Definition sll_project_strategy32 :=
   forall (p : Z) (l : (@list Z)),
     TT &&
@@ -721,7 +687,28 @@ Definition sll_project_strategy32 :=
       emp
       ).
 
-Definition sll_project_strategy33 :=
+Definition sll_project_strategy35 :=
+  forall (p : Z) (l : (@list Z)),
+    TT &&
+    emp **
+    ((sllb_sll p l))
+    |--
+    EX (h : Z),
+      (
+      TT &&
+      ([| (p <> 0) |]) &&
+      emp **
+      ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
+      ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
+      ((sll h l))
+      ) ** (
+      TT &&
+      emp -*
+      TT &&
+      emp
+      ).
+
+Definition sll_project_strategy36 :=
   TT &&
   emp
   |--
@@ -729,16 +716,16 @@ Definition sll_project_strategy33 :=
   TT &&
   emp
   ) ** (
-  ALL (p : Z) (pt : Z) (h : Z) (l : (@list Z)),
+  ALL (p : Z) (h : Z) (l : (@list Z)),
     TT &&
     ([| (p <> 0) |]) &&
     emp **
     ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "head") h)) **
-    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") pt)) **
+    ((poly_store FET_ptr &( ((p)) # "sllb" ->ₛ "ptail") 0)) **
     ((sll h l)) -*
     TT &&
     emp **
-    ((sllb p l))
+    ((sllb_sll p l))
     ).
 
 Definition sll_project_strategy70 :=
@@ -768,10 +755,8 @@ Module Type sll_project_Strategy_Correct.
   Axiom sll_project_strategy5_correctness : sll_project_strategy5.
   Axiom sll_project_strategy6_correctness : sll_project_strategy6.
   Axiom sll_project_strategy14_correctness : sll_project_strategy14.
-  Axiom sll_project_strategy15_correctness : sll_project_strategy15.
   Axiom sll_project_strategy31_correctness : sll_project_strategy31.
   Axiom sll_project_strategy20_correctness : sll_project_strategy20.
-  Axiom sll_project_strategy21_correctness : sll_project_strategy21.
   Axiom sll_project_strategy40_correctness : sll_project_strategy40.
   Axiom sll_project_strategy41_correctness : sll_project_strategy41.
   Axiom sll_project_strategy42_correctness : sll_project_strategy42.
@@ -780,11 +765,12 @@ Module Type sll_project_Strategy_Correct.
   Axiom sll_project_strategy52_correctness : sll_project_strategy52.
   Axiom sll_project_strategy60_correctness : sll_project_strategy60.
   Axiom sll_project_strategy61_correctness : sll_project_strategy61.
-  Axiom sll_project_strategy34_correctness : sll_project_strategy34.
+  Axiom sll_project_strategy37_correctness : sll_project_strategy37.
   Axiom sll_project_strategy7_correctness : sll_project_strategy7.
   Axiom sll_project_strategy16_correctness : sll_project_strategy16.
   Axiom sll_project_strategy30_correctness : sll_project_strategy30.
   Axiom sll_project_strategy22_correctness : sll_project_strategy22.
+  Axiom sll_project_strategy38_correctness : sll_project_strategy38.
   Axiom sll_project_strategy72_correctness : sll_project_strategy72.
   Axiom sll_project_strategy73_correctness : sll_project_strategy73.
   Axiom sll_project_strategy74_correctness : sll_project_strategy74.
@@ -801,9 +787,9 @@ Module Type sll_project_Strategy_Correct.
   Axiom sll_project_strategy92_correctness : sll_project_strategy92.
   Axiom sll_project_strategy93_correctness : sll_project_strategy93.
   Axiom sll_project_strategy71_correctness : sll_project_strategy71.
-  Axiom sll_project_strategy89_correctness : sll_project_strategy89.
   Axiom sll_project_strategy32_correctness : sll_project_strategy32.
-  Axiom sll_project_strategy33_correctness : sll_project_strategy33.
+  Axiom sll_project_strategy35_correctness : sll_project_strategy35.
+  Axiom sll_project_strategy36_correctness : sll_project_strategy36.
   Axiom sll_project_strategy70_correctness : sll_project_strategy70.
 
 End sll_project_Strategy_Correct.

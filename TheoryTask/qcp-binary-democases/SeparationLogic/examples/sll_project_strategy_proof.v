@@ -51,11 +51,6 @@ Proof.
   entailer!.
 Qed.
 
-(*require no circle*)
-Lemma sll_project_strategy15_correctness : sll_project_strategy15.
-pre_process_default.
-Admitted.
-
 Lemma sll_project_strategy31_correctness : sll_project_strategy31.
 Proof.
   pre_process_default.
@@ -70,16 +65,6 @@ Proof.
   unfold sllbseg.
   entailer!.
 Qed.
-
-(*require no circle*)
-Lemma sll_project_strategy21_correctness : sll_project_strategy21.
-Proof.
-  pre_process_default.
-  destruct l.
-  + entailer!.
-  + entailer!. 
-    unfold sllbseg.
-Admitted.
 
 Lemma sll_project_strategy40_correctness : sll_project_strategy40.
   pre_process_default.
@@ -131,11 +116,15 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma sll_project_strategy34_correctness : sll_project_strategy34.
+(* sllb_sll strategies *)
+
+Lemma sll_project_strategy37_correctness : sll_project_strategy37.
 Proof.
   pre_process_default.
+  unfold sllb_sll.
+  Exists h.
   entailer!.
-Admitted.
+Qed.
 
 Lemma sll_project_strategy7_correctness : sll_project_strategy7.
 Proof.
@@ -162,6 +151,14 @@ Proof.
 Qed.
 
 Lemma sll_project_strategy22_correctness : sll_project_strategy22.
+Proof.
+  pre_process_default.
+  entailer!.
+  rewrite H.
+  entailer!.
+Qed.
+
+Lemma sll_project_strategy38_correctness : sll_project_strategy38.
 Proof.
   pre_process_default.
   entailer!.
@@ -338,29 +335,7 @@ Proof.
   unfold UIntArray.undef_ceil.
   replace (n - 0) with n by lia.
   entailer!.
-  Qed.
-
-Lemma sll_project_strategy89_correctness : sll_project_strategy89.
-Proof.
-  pre_process_default.
-  assert (H_valid_range: y <= z).
-  {
-    admit. 
-  }
-  assert (H_elem_to_shape: (p + z * sizeof (UINT)) # UInt |-> v |-- UIntArray.ceil_shape p z (z + 1)).
-  {
-    unfold UIntArray.ceil_shape.
-    replace (z + 1 - z) with 1 by lia.
-    simpl.
-    Exists v.
-    entailer!.
-  }
-  sep_apply H_elem_to_shape.
-  clear H_elem_to_shape.
-  sep_apply (UIntArray.ceil_shape_merge_to_ceil_shape p y z (z + 1)).
-  - entailer!.
-  - lia.
-Admitted.
+Qed.
 
 Lemma sll_project_strategy32_correctness : sll_project_strategy32.
 Proof.
@@ -372,12 +347,26 @@ Proof.
   apply elim_wand_emp_emp.
 Qed.
 
-Lemma sll_project_strategy33_correctness : sll_project_strategy33.
+(* sllb_sll unfold left - strategy 35 *)
+Lemma sll_project_strategy35_correctness : sll_project_strategy35.
 Proof.
   pre_process_default.
-  (* 该策略试图从 sll 折叠回 sllb，但 sll 丢失了必要的尾指针信息。 *)
-  (* 实际验证中已使用 sll_pt 和 app_list_box_which_implies_valid 替代此逻辑。 *)
-Admitted.
+  unfold sllb_sll.
+  Intros h.
+  Exists h.
+  entailer!.
+  apply elim_wand_emp_emp.
+Qed.
+
+(* sllb_sll unfold right - strategy 36 *)
+Lemma sll_project_strategy36_correctness : sll_project_strategy36.
+Proof.
+  pre_process_default.
+  entailer!.
+  unfold sllb_sll.
+  Exists h.
+  entailer!.
+Qed.
 
 Lemma sll_project_strategy70_correctness : sll_project_strategy70.
 Proof.
@@ -397,5 +386,5 @@ Proof.
   - entailer!.
     apply derivable1_wand_sepcon_adjoint.
     entailer!.
-  - lia. 
+  - lia.
 Qed.

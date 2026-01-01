@@ -22,7 +22,20 @@ Local Open Scope sac.
 Lemma proof_of_cons_list_return_wit_1 : cons_list_return_wit_1.
 Proof.
   pre_process.
-  simpl sll. Exists next_pre. entailer!.
+  unfold sll_pt.
+  destruct l.
+  - Intros. subst next_pre.
+    Right.
+    Exists (&(retval # "sll" ->ₛ "next")).
+    simpl sllbseg.
+    entailer!.
+  - Intros.
+    Left.
+    Exists pt.
+    simpl sllbseg.
+    Exists next_pre.
+    entailer!.
+    discriminate.
 Qed.
 
 Lemma proof_of_free_list_return_wit_1 : free_list_return_wit_1.
@@ -81,54 +94,78 @@ Proof.
   - simpl sll. Intros. tauto.
   - simpl sll. Intros. Intros y.
     Exists y a l0. entailer!.
+Qed.
+
+Lemma proof_of_cons_list_box_return_wit_1 : cons_list_box_return_wit_1.
+Proof.
+  pre_process.
+  subst l.
+  simpl sll_pt.
+  Intros.
+  Exists (&(retval # "sll" ->ₛ "next")).
+  simpl sllbseg.
+  Exists retval.
+  simpl sllbseg.
+  entailer!.
+  subst pt_new_2.
+  entailer!.
+Qed. 
+
+Lemma proof_of_cons_list_box_return_wit_2 : cons_list_box_return_wit_2.
+Proof.
+  pre_process.
+  simpl sll_pt.
+  Intros.
+  Exists pt.
+  simpl sllbseg.
+  Exists retval.
+  entailer!.
+  subst pt_new_2.
+  entailer!.
+Qed. 
+
+Lemma proof_of_cons_list_box_which_implies_wit_1 : cons_list_box_which_implies_wit_1.
+Proof.
+  pre_process.
+  sep_apply (sllbseg_0_sll_pt (&(box # "sllb" ->ₛ "head")) pt l).
+  Intros h.
+  Exists h.
+  entailer!.
 Qed. 
 
 Lemma proof_of_app_list_box_return_wit_1 : app_list_box_return_wit_1.
 Proof.
   pre_process.
-  (* h2 = 0, so l2 = nil by sll_pt definition *)
   unfold sll_pt.
   destruct l2.
-  + (* l2 = nil *)
-    Intros. subst h2.
+  + Intros. subst h2.
     rewrite app_nil_r.
-    (* Now: &(b1->ptail) |-> pt1 ** sllbseg(&(b1->head), pt1, l1) ** pt1 |-> 0 *)
-    sep_apply (sllbseg_store_2_sllb b1_pre pt1 l1).
+    sep_apply (sllbseg_2_sllb b1_pre pt1 l1).
     entailer!.
     rewrite <- H2.
     tauto.
-  + (* l2 = z :: l2, but h2 = 0 contradicts h2 <> NULL *)
-    Intros. tauto.
+  + Intros. tauto.
 Qed.
 
 Lemma proof_of_app_list_box_return_wit_2 : app_list_box_return_wit_2.
 Proof.
   pre_process.
-  (* h2 <> 0, so l2 = a :: l2' for some a, l2' *)
   unfold sll_pt.
   destruct l2.
-  + (* l2 = nil implies h2 = NULL, contradiction *)
-    Intros. tauto.
-  + (* l2 = z :: l2 *)
-    Intros.
-    (* Now have:
-       &(b1->ptail) |-> pt2 **
-       sllbseg(&(b1->head), pt1, l1) **
-       pt1 |-> h2 **
-       &(h2->data) |-> z **
-       sllbseg(&(h2->next), pt2, l2) **
-       pt2 |-> NULL *)
+  + Intros. tauto.
+  + Intros.
     sep_apply (sllbseg_append_sllbseg (&(b1_pre # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 z l2 H).
-    sep_apply (sllbseg_store_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
+    sep_apply (sllbseg_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
     entailer!.
 Qed.
 
 Lemma proof_of_app_list_box_which_implies_wit_1 : app_list_box_which_implies_wit_1.
 Proof.
   pre_process.
-  (* Use the key lemma we proved in lib *)
-  sep_apply (app_list_box_which_implies_valid b1 b2 l1 l2).
-  Intros pt1 h2 pt2.
+  sep_apply (sllb_2_sllbseg b1 l1).
+  Intros pt1.
+  sep_apply (sllb_2_sll_pt b2 l2).
+  Intros h2 pt2.
   Exists pt2 h2 pt1.
   entailer!.
 Qed. 
@@ -180,23 +217,74 @@ Proof.
   - simpl sll. Intros. tauto.
   - simpl sll. Intros. Intros x.
     Exists x a l0. entailer!.
-Qed. 
+Qed.
 
 Lemma proof_of_sll2array_entail_wit_1 : sll2array_entail_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists (@nil Z) l.
+  simpl sllseg. simpl Zlength. simpl app.
+  rewrite (UIntArray.ceil_shape_empty retval_2 0).
+  entailer!.
+  rewrite H.
+  pose proof (Zlength_nonneg l).
+  lia.
+Qed.
 
 Lemma proof_of_sll2array_entail_wit_2 : sll2array_entail_wit_2.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  Exists (l1_2 ++ p_data :: nil) l3.
+  entailer!.
+  - sep_apply sllseg_len1; try easy.
+    rewrite logic_equiv_sepcon_comm.
+    sep_apply sllseg_sllseg.
+    entailer!.
+    sep_apply UIntArray.ceil_single.
+    sep_apply UIntArray.ceil_to_ceil_shape.
+    sep_apply (UIntArray.ceil_shape_merge_to_ceil_shape arr 0 i (i + 1)); try lia.
+    entailer!.
+  - rewrite Zlength_app, Zlength_cons, Zlength_nil. lia.
+  - rewrite H2, H. rewrite <- app_assoc. simpl. reflexivity.
+Qed.
 
 Lemma proof_of_sll2array_return_wit_1 : sll2array_return_wit_1.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  subst p.
+  sep_apply sll_zero; try tauto.
+  Intros. subst l2.
+  rewrite app_nil_r in H0.
+  subst l.
+  Exists arr.
+  sep_apply sllseg_0_sll.
+  rewrite H1.
+  rewrite H2.
+  rewrite (UIntArray.undef_ceil_empty arr (Zlength l1)).
+  sep_apply (UIntArray.ceil_shape_to_full_shape arr 0 (Zlength l1)).
+  replace (arr + 0 * sizeof(UINT)) with arr by lia.
+  replace (Zlength l1 - 0) with (Zlength l1) by lia.
+  entailer!.
+Qed.
 
 Lemma proof_of_sll2array_partial_solve_wit_3_pure : sll2array_partial_solve_wit_3_pure.
-Proof. Admitted. 
+Proof.
+  pre_process.
+  prop_apply (sll_not_null_length p l2 H).
+  Intros.
+  entailer!.
+  subst i len.
+  rewrite H0.
+  rewrite Zlength_app.
+  lia.
+Qed.
 
 Lemma proof_of_sll2array_which_implies_wit_1 : sll2array_which_implies_wit_1.
-Proof. Admitted. 
-
-Lemma proof_of_sllb2array_return_wit_1 : sllb2array_return_wit_1.
-Proof. Admitted. 
-
+Proof.
+  pre_process.
+  destruct l2 as [ | a l0].
+  - simpl sll. Intros. tauto.
+  - simpl sll. Intros. Intros y.
+    Exists y a l0.
+    entailer!.
+Qed.
