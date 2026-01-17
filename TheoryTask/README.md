@@ -420,7 +420,7 @@ void free_list_box(struct sllb *box)
    - 所有资源释放完毕，剩余 `emp`
    - 满足后置条件
 
-#### 3.2.5 `app_list_box` - sllb 合并
+#### 3.2.5 `app_list_box` - List Box 合并
 
 ```c
 struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
