@@ -136,17 +136,19 @@ Proves the reverse: restoring `sllb_sll` from an `sll`.
 > **Proof (`sll_project_strategy36_correctness`):**
 > After the helper function returns `sll h l`, we simply `Exists h` and repackage the resources. Because `sllb_sll` does not demand `ptail` precision, this entailment is trivial compared to the strict `sllb` reconstruction.
 
-## 3. Fully Automated Verification of `map_list_box`
+## 3 Fully Automated Verification via Stratrgies
+
+### 3.1 Fully Automated Verification of `map_list_box`
 
 A testament to the effective design of our strategies is the verification of `map_list_box`. This function required **zero manual proof**. The logic generator's output was entirely solved by the strategies defined in `sll_project_strategy_proof.v`.
 
-### 3.1 The Logic Flow
+#### 3.1.1 The Logic Flow
 The function is a simple wrapper:
 1.  **Entry (`map_list_box_which_implies_wit_1`)**: The automation engine matches this entailment against **Strategy 35**. The `sllb_sll` resource is automatically unfolded to expose `sll h l` and `box->head`.
 2.  **Function Call**: `map_list(box->head, x)` is called. The precondition `sll h l` is satisfied by the result of Step 1.
 3.  **Return (`map_list_box_return_wit_1`)**: The automation engine matches the post-state (where `map_list` returns `sll h (map_mult x l)`) against **Strategy 36**. It automatically folds the resources back into `sllb_sll`.
 
-### 3.2 The `map_mult` Auxiliary Predicate
+#### 3.1.2 The `map_mult` Auxiliary Predicate
 To specify the behavior of mapping multiplication over a list, we defined `map_mult` in `sll_project_lib.v`:
 
 ```coq
@@ -155,6 +157,51 @@ Definition map_mult (x: Z) (l: list Z): list Z :=
 ```
 
 This definition lifts the C-level multiplication (modulo $2^{32}$) to the logical level. The automation relies on standard list properties (e.g., `map_app`) to prove that processing the list element-by-element in the loop matches this high-level definition.
+
+### 3.2 Fully Automated Verification of `free_list_box`
+
+Similar to `map_list_box`, the deallocation function `free_list_box` is verified automatically by leveraging the view-shift strategies to separate the container from its content.
+
+#### The Logic Flow
+
+The verification engine proves the memory safety of freeing the structure without manual intervention by matching the annotated implication against our defined strategies:
+
+1. **View Separation (`free_list_box_which_implies_wit_1`)**:
+The function annotation specifies an implication that transforms `sllb(box, l)` into `sll(h, l)`. The automation engine successfully matches this against **Strategy 32**.
+
+* **Strategy 32**: This strategy formally proves that a list box `sllb` implies the existence of a standard linked list `sll` pointed to by `box->head`, effectively separating the "box" resource from the "list" resource.
+
+* **Proof**: The underlying proof in `sll_project_strategy_proof.v` uses the lemma `sllb_2_sll` to justify this separation.
+
+1. **Resource Consumption**:
+* `free_list(box->head)` is called, consuming the `sll(h, l)` resource exposed by Strategy 32.
+
+* `free_sllb(box)` is called, consuming the fields of the box itself (`box->head` and `box->ptail`).
+
+3. **Return (`free_list_box_return_wit_1`)**:
+After both the list content and the box container are freed, the remaining resource is `emp`. This matches the postcondition `Ensure emp` trivially, completing the proof.
+
+### 3.3 Fully Automated Verification of `nil_list_box`
+
+The `nil_list_box` function constructs an empty list box. Its verification highlights how our strategies handle initialization and base cases.
+
+#### The Logic Flow
+
+1. **Allocation**:
+`new_sllb()` allocates a raw box structure. The verification engine tracks the uninitialized fields.
+2. **Base Case Initialization**:
+`box->head = nil_list()` is called. The `nil_list` function ensures `sll(0, nil)`. The automation implicitly relies on **Strategy 3** (or standard logical simplification), which equates `sll p nil` with `p = NULL`, confirming that `box->head` is set to `0`.
+
+3. **Structural Wiring**:
+The assignment `box->ptail = &box->head` establishes the characteristic invariant of an empty `sllb`: the tail pointer must point to the head pointer itself.
+
+4. **Return Verification**:
+Unlike other functions that return an `sllb` predicate, `nil_list_box` explicitly ensures the low-level structure:
+```c
+Ensure ... store(&(__return -> head), 0) * store(&(__return -> ptail), &(__return -> head))
+```
+
+Because the postcondition describes the exact physical memory state created by the assignments (rather than a folded `sllb` predicate), the automation engine verifies this strictly through symbolic execution without needing a complex "Fold" strategy. This demonstrates the flexibility of our specification design—using precise structural descriptions for constructors to simplify verification.
 
 ## 4. Array Verification Strategies (`sll2array`)
 
