@@ -251,37 +251,6 @@ cd ../../../..
 - macOS/Linux 用户：将 `win-binary/` 替换为 `mac-arm64-binary/` 或 `linux-binary/`
 - 生成工具会产生一些无害的警告信息（如 `pipe: No such file or directory`）
 
-#### 快速构建（使用自动化脚本）
-
-**Windows 用户**：
-```powershell
-# 使用 PowerShell（需要手动运行验证文件生成步骤）
-.\build.ps1
-
-# 或使用批处理文件（自动检测 Cygwin/WSL）
-.\build.bat
-
-# 仅环境搭建，跳过验证文件生成
-.\build.ps1 -SkipSetup:$false
-```
-
-**Linux/macOS/Cygwin/WSL 用户**：
-```bash
-# 完整构建
-./build.sh
-
-# 仅环境搭建
-./build.sh --skip-setup
-
-# 清理生成文件
-./clean.sh
-```
-
-**脚本功能**：
-- `build.sh` / `build.ps1`：自动执行环境搭建和验证文件生成
-- `build.bat`：Windows 批处理包装器，自动检测 Cygwin/WSL
-- `clean.sh`：清理生成的验证文件（保留 `sll_project_lib.v`）
-
 ### 验证要求
 
 根据课程要求，需要完成以下工作：
@@ -328,4 +297,4 @@ cd ../../../..
 - **C 源代码**（3个）：`sll_project_def.h`, `sll_project_lib.c`, `sll_project.strategies`
 - **Coq 验证文件**（8个）：包括手动编写的谓词定义、策略证明及自动生成的验证目标
 
-详细说明请查看 [TheoryTask/SubmissionFiles/README.md](TheoryTask/SubmissionFiles/README.md)。构建脚本执行后会自动更新这些文件。
+详细说明请查看 [TheoryTask/SubmissionFiles/README.md](TheoryTask/SubmissionFiles/README.md)。
