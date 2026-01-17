@@ -127,19 +127,36 @@ Our verification relies on a "Strategy" pattern where complex entailments genera
 For `sllb2array`, the verification relies on shifting between the box view and the list view.
 
 * **Strategy 35 (Unfold)**:
-Proves that `sllb_sll` implies the existence of a standard `sll`. This allows the C function to pass `box->head` to `sll2array`.
-> **Proof (`sll_project_strategy35_correctness`, L151):**
+Proves that `sllb_sll` implies the existence of a standard `sll`. This allows the C function to pass `box->head` to `sll2array` or `map_list`.
+> **Proof (`sll_project_strategy35_correctness`):**
 > We use `unfold sllb_sll` and `Intros h` to expose the head pointer `h` and the inner `sll h l` resource, satisfying the precondition of the inner function call.
-
 
 * **Strategy 36 (Fold)**:
 Proves the reverse: restoring `sllb_sll` from an `sll`.
-> **Proof (`sll_project_strategy36_correctness`, L152):**
-> After `sll2array` returns `sll h l`, we simply `Exists h` and repackage the resources. Because `sllb_sll` does not demand `ptail` precision, this entailment is trivial compared to the strict `sllb` reconstruction.
+> **Proof (`sll_project_strategy36_correctness`):**
+> After the helper function returns `sll h l`, we simply `Exists h` and repackage the resources. Because `sllb_sll` does not demand `ptail` precision, this entailment is trivial compared to the strict `sllb` reconstruction.
 
+## 3. Fully Automated Verification of `map_list_box`
 
+A testament to the effective design of our strategies is the verification of `map_list_box`. This function required **zero manual proof**. The logic generator's output was entirely solved by the strategies defined in `sll_project_strategy_proof.v`.
 
-## 3. Array Verification Strategies (`sll2array`)
+### 3.1 The Logic Flow
+The function is a simple wrapper:
+1.  **Entry (`map_list_box_which_implies_wit_1`)**: The automation engine matches this entailment against **Strategy 35**. The `sllb_sll` resource is automatically unfolded to expose `sll h l` and `box->head`.
+2.  **Function Call**: `map_list(box->head, x)` is called. The precondition `sll h l` is satisfied by the result of Step 1.
+3.  **Return (`map_list_box_return_wit_1`)**: The automation engine matches the post-state (where `map_list` returns `sll h (map_mult x l)`) against **Strategy 36**. It automatically folds the resources back into `sllb_sll`.
+
+### 3.2 The `map_mult` Auxiliary Predicate
+To specify the behavior of mapping multiplication over a list, we defined `map_mult` in `sll_project_lib.v`:
+
+```coq
+Definition map_mult (x: Z) (l: list Z): list Z :=
+  List.map (fun a => unsigned_last_nbits (x * a) 32) l.
+```
+
+This definition lifts the C-level multiplication (modulo $2^{32}$) to the logical level. The automation relies on standard list properties (e.g., `map_app`) to prove that processing the list element-by-element in the loop matches this high-level definition.
+
+## 4. Array Verification Strategies (`sll2array`)
 
 The core complexity of `sllb2array` lies in `sll2array`, which allocates and fills a C array. The verification uses `UIntArray` predicates from the separation logic library.
 
