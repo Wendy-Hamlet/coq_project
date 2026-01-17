@@ -1,0 +1,5 @@
+From SimpleC.EE Require Import sll_project_strategy_goal sll_project_strategy_proof.
+
+Module sll_project_Strategy_Correctness : sll_project_Strategy_Correct.
+  Include sll_project_strategy_proof.
+End sll_project_Strategy_Correctness.

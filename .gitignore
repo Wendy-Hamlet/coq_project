@@ -70,3 +70,11 @@ CONFIGURE
 .nra.cache
 .csdp.cache
 
+# Coq 生成的验证文件（保留 sll_project_lib.v）
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_goal.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_goal_check.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_proof_auto.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_proof_manual.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_strategy_goal.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_strategy_goal_check.v
+TheoryTask/qcp-binary-democases/SeparationLogic/examples/sll_project_strategy_proof.v

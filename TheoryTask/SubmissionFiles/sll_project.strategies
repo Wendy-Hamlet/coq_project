@@ -1,0 +1,397 @@
+//strategies for sll, sllb and UIntArray verification
+//max rule id: 93
+
+#include "sll_project_def.h"
+#include "verification_list.h"
+#include "verification_stdlib.h"
+
+// sll rules - basic
+id : 3
+priority : core(0)
+left : sll(?p, nil{Z}) at 0
+action : left_erase(0);
+         left_add(p == NULL);
+
+id : 4
+priority : core(0)
+right : sll(?p, nil{Z}) at 0
+action : right_erase(0);
+         right_add(p == NULL);
+
+id : 5
+priority : core(0)
+right : sll(NULL, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 6
+priority : core(0)
+left : sll(NULL, ?l) at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 7
+priority : core(1)
+left : sll(?p, ?l0) at 0
+right : sll(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllseg rules
+id : 14
+priority : core(0)
+right : sllseg(?p, p, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+// Strategy 15 removed: requires no-circle assumption
+// id : 15
+// priority : core(0)
+// left : sllseg(?p, p, ?l) at 0
+// action : left_erase(0);
+//          left_add(l == nil{Z});
+
+id : 16
+priority : core(1)
+left : sllseg(?p, ?q, ?l0) at 0
+right : sllseg(p, q, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllb rules - matching left and right
+id : 30
+priority : core(1)
+left : sllb(?p, ?l0) at 0
+right : sllb(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+id : 31
+priority : core(0)
+left : sllb(?p, nil{Z}) at 0
+right : sllb(p, nil{Z}) at 1
+action : left_erase(0);
+         right_erase(1);
+
+// sllbseg rules
+id : 20
+priority : core(0)
+right : sllbseg(?p, p, ?l) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+// Strategy 21 removed: requires no-circle assumption
+// id : 21
+// priority : core(0)
+// left : sllbseg(?p, p, ?l) at 0
+// action : left_erase(0);
+//          left_add(l == nil{Z});
+
+id : 22
+priority : core(1)
+left : sllbseg(?p, ?q, ?l0) at 0
+right : sllbseg(p, q, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// sllb unfold rules - left side
+// sllb(p, l) = EX h pt. p != NULL && data_at(&p->head, h) ** data_at(&p->ptail, pt) ** sll(h, l)
+id : 32
+priority : core(3)
+left : sllb(?p, ?l) at 0
+action : left_erase(0);
+         left_exist_add(h);
+         left_exist_add(pt);
+         left_add(p != 0);
+         left_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         left_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
+         left_add(sll(h, l));
+
+// sllb unfold rules - right side
+// Strategy 33 removed: loses tail pointer information during fold back
+// id : 33
+// priority : core(3)
+// right : sllb(?p, ?l) at 0
+// action : right_erase(0);
+//          right_exist_add(h);
+//          right_exist_add(pt);
+//          right_add(p != 0);
+//          right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+//          right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), pt));
+//          right_add(sll(h, l));
+
+// sllb fold rules
+// Strategy 34 removed: cannot prove without additional constraints
+// id : 34
+// priority : fold_sllb(0)
+// left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
+//        data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), ?pt) at 1
+//        sll(h, ?l) at 2
+//        (p != NULL || NULL != p) at 3
+// action : left_erase(0);
+//          left_erase(1);
+//          left_erase(2);
+//          left_add(sllb(p, l));
+
+// =====================
+// sllb_sll rules (sll-based sllb for nested function calls)
+// =====================
+
+// sllb_sll unfold - left side
+// Note: We add (p != 0) because sllb_sll contains [|p <> 0|]
+id : 35
+priority : core(3)
+left : sllb_sll(?p, ?l) at 0
+action : left_erase(0);
+         left_exist_add(h);
+         left_add(p != 0);
+         left_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         left_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), 0));
+         left_add(sll(h, l));
+
+// sllb_sll unfold - right side
+// Note: We add (p != 0) to right side because sllb_sll contains [|p <> 0|]
+id : 36
+priority : core(3)
+right : sllb_sll(?p, ?l) at 0
+action : right_erase(0);
+         right_exist_add(h);
+         right_add(p != 0);
+         right_add(data_at(field_addr(p, sllb, head), PTR(struct sll), h));
+         right_add(data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), 0));
+         right_add(sll(h, l));
+
+// sllb_sll fold - from components
+// Note: We match only (p != 0), not (p != 0 || 0 != p), because the latter is harder to prove
+id : 37
+priority : fold_sllb_sll(0)
+left : data_at(field_addr(?p, sllb, head), PTR(struct sll), ?h) at 0
+       data_at(field_addr(p, sllb, ptail), PTR(PTR(struct sll)), 0) at 1
+       sll(h, ?l) at 2
+       p != 0 at 3
+action : left_erase(0);
+         left_erase(1);
+         left_erase(2);
+         left_erase(3);
+         left_add(sllb_sll(p, l));
+
+// sllb_sll matching
+id : 38
+priority : core(1)
+left : sllb_sll(?p, ?l0) at 0
+right : sllb_sll(p, ?l1) at 1
+action : left_erase(0);
+         right_erase(1);
+         right_add(l0 == l1);
+
+// map_mult rules
+id : 40
+priority : core(0)
+right : map_mult(?x, nil{Z}) == ?l at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+id : 41
+priority : core(0)
+left : map_mult(?x, nil{Z}) == ?l at 0
+action : left_erase(0);
+         left_add(l == nil{Z});
+
+id : 42
+priority : core(0)
+right : sllseg(?p, p, map_mult(?x, ?l)) at 0
+action : right_erase(0);
+         right_add(l == nil{Z});
+
+// app rules
+id : 50
+priority : core(0)
+right : app{Z}(nil{Z}, ?l) == ?r at 0
+action : right_erase(0);
+         right_add(l == r);
+
+id : 51
+priority : core(0)
+left : app{Z}(nil{Z}, ?l) == ?r at 0
+action : left_erase(0);
+         left_add(l == r);
+
+id : 52
+priority : core(0)
+right : ?l == app{Z}(nil{Z}, ?r) at 0
+action : right_erase(0);
+         right_add(l == r);
+
+// cons rules
+id : 60
+priority : core(0)
+right : cons{Z}(?x1, ?l1) == cons{Z}(?x2, ?l2) at 0
+action : right_erase(0);
+         right_add(x1 == x2);
+         right_add(l1 == l2);
+
+id : 61
+priority : core(0)
+left : cons{Z}(?x1, ?l1) == cons{Z}(?x2, ?l2) at 0
+action : left_erase(0);
+         left_add(x1 == x2);
+         left_add(l1 == l2);
+
+// ============================================================
+// UIntArray rules for array operations
+// ============================================================
+
+// --- undef_full rules ---
+id : 70
+priority : core(3)
+left : UIntArray::undef_full(?p, ?n) at 0
+right : undef_data_at(?p + (?i * sizeof(U32)), U32) at 1
+check : infer(0 <= i);
+        infer(i < n);
+action : right_erase(1);
+         left_erase(0);
+         left_add(UIntArray::undef_missing_i(p, i, 0, n));
+
+id : 71
+priority : post(1)
+left : UIntArray::undef_missing_i(?p, ?i, 0, ?n) at 0
+       undef_data_at(p + i * sizeof(U32), U32) at 1
+check : infer(0 <= i);
+        infer(i < n);
+action : left_erase(1);
+         left_erase(0);
+         left_add(UIntArray::undef_full(p, n));
+
+// --- undef_ceil rules ---
+// Extract element from undef_ceil at position x
+id : 72
+priority : core(1)
+left : UIntArray::undef_ceil(?p, ?x, ?y) at 0
+right : undef_data_at(?p + (x * sizeof(U32)), U32) at 1
+check : infer(x < y);
+action : right_erase(1);
+         left_erase(0);
+         left_add(UIntArray::undef_ceil(p, x + 1, y));
+
+// Convert undef_full to undef_ceil
+id : 73
+priority : core(1)
+left : UIntArray::undef_full(?p, ?n) at 0
+right : UIntArray::undef_ceil(?p, 0, n) at 1
+action : right_erase(1);
+         left_erase(0);
+
+// Eliminate empty undef_full
+id : 74
+priority : core(1)
+right : UIntArray::undef_full(?p, ?n) at 0
+check : infer(n == 0);
+action : right_erase(0);
+
+// Eliminate empty undef_ceil (left)
+id : 75
+priority : core(1)
+left : UIntArray::undef_ceil(?p, ?x, ?y) at 0
+check : infer(x == y);
+action : left_erase(0);
+
+// Eliminate empty undef_ceil (right)
+id : 76
+priority : core(1)
+right : UIntArray::undef_ceil(?p, ?x, ?x) at 0
+action : right_erase(0);
+
+// Match undef_ceil on both sides
+id : 77
+priority : core(1)
+left : UIntArray::undef_ceil(?p, ?x, ?y) at 0
+right : UIntArray::undef_ceil(?p, ?x1, ?y1) at 1
+check : infer(y1 == y);
+        infer(x1 == x);
+action : right_erase(1);
+         left_erase(0);
+
+// Extract first element from undef_full
+id : 78
+priority : core(1)
+left : UIntArray::undef_full(?p, ?n) at 0
+right : undef_data_at(?p + (0 * sizeof(U32)), U32) at 1
+check : infer(0 < n);
+action : right_erase(1);
+         left_erase(0);
+         left_add(UIntArray::undef_ceil(p, 1, n));
+
+// Handle 0 == Zlength(nil) equivalence
+id : 80
+priority : core(1)
+left : UIntArray::undef_ceil(?p, 0, ?n) at 0
+right : UIntArray::undef_ceil(p, Zlength{Z}(nil{Z}), ?m) at 1
+check : infer(n == m);
+action : right_erase(1);
+         left_erase(0);
+
+// --- ceil_shape rules (for tracking written array elements) ---
+// Eliminate empty ceil_shape (left)
+id : 85
+priority : core(1)
+left : UIntArray::ceil_shape(?p, ?x, ?y) at 0
+check : infer(x == y);
+action : left_erase(0);
+
+// Eliminate empty ceil_shape (right)
+id : 86
+priority : core(1)
+right : UIntArray::ceil_shape(?p, ?x, ?y) at 0
+check : infer(x == y);
+action : right_erase(0);
+
+// Match ceil_shape on both sides
+id : 87
+priority : core(1)
+left : UIntArray::ceil_shape(?p, ?x, ?y) at 0
+right : UIntArray::ceil_shape(?p, x, ?y1) at 1
+check : infer(y1 == y);
+action : right_erase(1);
+         left_erase(0);
+
+// Combine ceil_shape with data_at (after array write)
+// Strategy 89 removed: requires range condition y <= z that cannot be proven
+// id : 89
+// priority : post(1)
+// left : UIntArray::ceil_shape(?p, ?y, ?z) at 0
+//        data_at(p + (z * sizeof(U32)), U32, ?v) at 1
+// action : left_erase(1);
+//          left_erase(0);
+//          left_add(UIntArray::ceil_shape(p, y, z + 1));
+
+// Eliminate ceil_shape(0, Zlength(nil)) - special case for loop init
+id : 90
+priority : core(1)
+left : UIntArray::ceil_shape(?p, 0, Zlength{Z}(nil{Z})) at 0
+action : left_erase(0);
+
+id : 91
+priority : core(1)
+right : UIntArray::ceil_shape(?p, 0, Zlength{Z}(nil{Z})) at 0
+action : right_erase(0);
+
+// --- full_shape rules ---
+// Convert ceil_shape(0, n) to full_shape(n)
+id : 92
+priority : core(1)
+left : UIntArray::ceil_shape(?p, 0, ?i) at 0
+right : UIntArray::full_shape(?p, ?n) at 1
+check : infer(i == n);
+action : left_erase(0);
+         right_erase(1);
+
+// Eliminate empty full_shape
+id : 93
+priority : core(1)
+right : UIntArray::full_shape(?p, ?n) at 0
+check : infer(n == 0);
+action : right_erase(0);
