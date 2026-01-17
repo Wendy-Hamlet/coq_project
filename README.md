@@ -13,7 +13,6 @@
 coq_project/
 ├── README.md                   # 本文件
 ├── Makefile                    # 构建配置
-├── PRECISION_PROBLEM_ANALYSIS.md  # 精度问题分析文档
 │
 ├── ProgrammingTask/            # 编程任务：WhileD 编译器
 │   ├── README.md               # 任务说明
@@ -321,7 +320,7 @@ cd ../../../..
 - [TheoryTask/sllb_lemmas_guide.md](TheoryTask/sllb_lemmas_guide.md) - 引理指南
 - [TheoryTask/app_list_box_verification_notes.md](TheoryTask/app_list_box_verification_notes.md) - `app_list_box` 验证笔记
 - [TheoryTask/sllb2array_verification_notes.md](TheoryTask/sllb2array_verification_notes.md) - `sllb2array` 验证笔记
-- [PRECISION_PROBLEM_ANALYSIS.md](PRECISION_PROBLEM_ANALYSIS.md) - 精确性问题分析
+- [TheoryTask/precision_problem_analysis.md](TheoryTask/precision_problem_analysis.md) - 精确性问题分析
 ## 提交文件说明
 
 所有用于课程验证的关键文件已整理到 **[TheoryTask/SubmissionFiles/](TheoryTask/SubmissionFiles/)** 目录：

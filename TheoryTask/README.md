@@ -1,24 +1,51 @@
-# Part 1: Precise Structural Modeling & Pointer Logic
+# TheoryTask - 链表数据结构的 Coq 形式化验证
 
-This section details the verification strategies for the `sllb` (List Box) structure, specifically focusing on the challenge of verifying $O(1)$ tail operations involving double pointers.
+本任务对基于双重指针实现的链表数据结构（sllb）进行形式化验证，使用 Coq 和分离逻辑证明 C 程序的正确性。
 
-## 1. Predicate Design: The `sllb` Structure
+## 1. 核心数据结构
 
-To support $O(1)$ append operations, the C structure maintains a tail pointer (`ptail`) that points to the location where the next node should be attached. The physical semantics of this pointer differ fundamentally depending on whether the list is empty or not. We model this utilizing a disjunctive separation logic predicate `sllb`.
+### 1.1 基础链表节点（`sll`）
 
-### Definition (`sllb` in `sll_project_lib.v`)
-The predicate distinguishes two cases to precisely track the memory location of the "tail":
+```c
+struct sll {
+    unsigned int data;
+    struct sll *next;
+};
+```
+
+标准单向链表节点，包含数据字段和指向下一个节点的指针。
+
+### 1.2 List Box 结构（`sllb`）
+
+```c
+struct sllb {
+    struct sll *head;     // 链表头指针
+    struct sll **ptail;   // 指向尾部的双重指针
+};
+```
+
+**设计思想**：`ptail` 是指向"下一个节点应该插入位置"的双重指针：
+- **空链表**：`ptail` 指向 `&head`，写入 `*ptail` 直接更新头指针
+- **非空链表**：`ptail` 指向最后一个节点的 `&next` 字段，写入 `*ptail` 将新节点链接到尾部
+
+这种设计支持 **常数时间的尾部操作**，例如链表合并。
+
+## 2. 分离逻辑谓词
+
+### 2.1 `sllb` 谓词（精确版本）
+
+定义在 `sll_project_lib.v` 中，用于需要修改链表结构的操作：
 
 ```coq
 Definition sllb (x: addr) (l: list Z): Assertion :=
   [| x <> NULL |] &&
   match l with
   | nil =>
-      (* Case Empty: ptail points to the 'head' field of the box itself *)
+      (* 空链表：ptail 指向 head 字段本身 *)
       &(x # "sllb" ->ₛ "head") # Ptr |-> NULL **
       &(x # "sllb" ->ₛ "ptail") # Ptr |-> (&(x # "sllb" ->ₛ "head"))
   | a :: l0 =>
-      (* Case Non-Empty: ptail points to the 'next' field of the last node *)
+      (* 非空链表：ptail 指向最后一个节点的 next 字段 *)
       EX ptail_val: addr,
         &(x # "sllb" ->ₛ "ptail") # Ptr |-> ptail_val **
         sllbseg (&(x # "sllb" ->ₛ "head")) ptail_val (a :: l0) **
@@ -26,217 +53,520 @@ Definition sllb (x: addr) (l: list Z): Assertion :=
   end.
 ```
 
-*   **Case Nil**: `ptail` points to `&box->head`. Writing to `*ptail` updates the head pointer directly.
-*   **Case Cons**: `ptail` points to the `next` field of the last node. Writing to `*ptail` links a new node to the end of the chain.
+**关键特性**：
+- 精确跟踪 `ptail` 的指向位置
+- 用于 `app_list_box`（链表合并）、`cons_list_box`（头部插入）等修改操作
+- 区分空/非空情况以维护尾指针不变量
 
-### Auxiliary Predicates
-*   **`sllbseg x y l`**: Describes a list segment starting at `x` and ending at the address `y` (the location of the pointer to the next segment). This is essential for describing the content *between* the head and the tail pointer.
-*   **`sll_pt h pt l`**: Used in `app_list_box` to expose the tail address `pt` of a standard singly linked list starting at `h`.
+### 2.2 `sllb_sll` 谓词（宽松版本）
 
-## 2. Key Structural Lemmas
-
-Verification of pointer manipulation relies on a set of structural lemmas defined in `sll_project_lib.v`. These allow us to decompose the proof into small, manageable steps.
-
-### Lemma: `sllbseg_append_sllbseg`
-This is the central lemma for proving the $O(1)$ merge. It states that if we have a segment ending at `pt1`, and `pt1` points to the head of a second segment `h2`, the two segments are logically connected.
-
-> **Formal Statement:**
-> `sllbseg x pt1 l1 ** pt1 # Ptr |-> h2 ** ... ** sllbseg ... l2 ... |-- sllbseg x pt2 (l1 ++ a :: l2)`
-
-**Proof Sketch:**
-The proof proceeds by **induction on the first list `l1`**:
-*   **Base Case (`l1 = nil`)**: The segment `sllbseg x pt1 nil` implies `x = pt1`. We must prove `sllbseg pt1 pt2 (a::l2)`. The resource `pt1 # Ptr |-> h2` (provided in the premise) serves as the critical link, satisfying the existential quantifier for the head node in the target `sllbseg`.
-*   **Inductive Step**: For `l1 = h :: t`, we unfold the head of the first segment. We then apply the **inductive hypothesis** to the remaining tail segment `sllbseg ... t`. This effectively "zippers" the connection at `pt1`, extending the recursive definition to cover the appended list.
-
-### Lemma: `sllb_2_sll_pt`
-A view-shift lemma that unfolds the recursive `sllb` definition into a flat representation, exposing the head `h` and the tail pointer `pt`. This is used to "open" the box before modification.
-
-## 3. Correctness Proofs
-
-With the predicates and lemmas defined, we present the high-level proof logic for the critical functions.
-
-### 3.1 Verification of `app_list_box` (O(1) Merge)
-The function merges list `b2` into `b1` in constant time. The proof is split into three lemmas in `sll_project_proof_manual.v`, reflecting the Verification Condition Generation (VCG) structure:
-
-1.  **Implication Verification (`app_list_box_which_implies_wit_1`, L162)**:
-    Before the list manipulation, we justify the symbolic execution path.
-    *   **Tactic**: `sep_apply (sllb_2_sllbseg b1 l1)` and `sep_apply (sllb_2_sll_pt b2 l2)`.
-    *   **Logic**: This explicitly unfolds the `sllb` resources. `b1` is unfolded to expose its tail pointer `pt1` (via `sllbseg`), and `b2` is unfolded to expose its head `h2` and tail pointer `pt2` (via `sll_pt`).
-
-2.  **Return Verification (`app_list_box_return_wit_2`, L150)**:
-    This lemma handles the core logic when `b2` is non-empty (`l2` is not nil).
-    *   **Step 1: Resource Merge**: We apply the critical structural lemma:
-        ```coq
-        sep_apply (sllbseg_append_sllbseg (&(b1_pre # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 z l2 H).
-        ```
-        This step formally executes the pointer update `*(b1->ptail) = b2->head`, logically merging the two segments.
-    *   **Step 2: Re-packaging**: After the merge, we apply:
-        ```coq
-        sep_apply (sllbseg_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
-        ```
-        This folds the segment back into a valid `sllb` predicate, confirming that the new structure (with `ptail` now pointing to `pt2`) forms a valid list box.
-
-### 3.2 Verification of `cons_list_box`
-This function prepends a node. The proof handles the critical update of `ptail` using case analysis on the list state `l`:
-
-1.  **Non-Empty Case (`cons_list_box_return_wit_2`, L114)**:
-    *   **Logic**: When `l` is not nil, `ptail` points to the end of the list. Inserting at the head does **not** change the location of `ptail`.
-    *   **Proof**: The proof simply updates the head pointer. The `sllbseg` is extended by one node, but the tail pointer `pt` remains valid.
-
-2.  **Empty Case (`cons_list_box_return_wit_1`, L99)**:
-    *   **Logic**: When `l` is nil, `ptail` initially points to `&box->head`. After insertion, `ptail` must point to `&node->next`.
-    *   **Proof**: The tactic script explicitly instantiates the new tail pointer:
-        ```coq
-        Exists (&(retval # "sll" ->ₛ "next")).
-        ```
-        This matches the C code logic `box->ptail = &(box->head->next)` (lines 122-123 in `sll_lib.c`), proving that the pointer update correctly maintains the `sllb` invariant for the singleton list.
-
-# Part 2: Array Conversion & View-Shift Strategies
-
-This section details the verification logic for converting linked list boxes to arrays (`sllb2array`). It focuses on the "Strategy" proof architecture used to handle the complexity of array bounds and the predicate view-shifts required to bypass the precision limitations of the strict `sllb` predicate during read-only traversals.
-
-## 1. The Challenge: Read-Only Traversal & Precision
-
-As detailed in Part 1, `sllb` is a "heavy" predicate designed for $O(1)$ mutations. However, functions like `sllb2array` and `map_list_box` perform read-only traversals or simple data mappings. Using the strict `sllb` predicate here introduces a **Precision Problem**:
-* To call the helper `sll2array`, we must unfold `sllb` to `sll`.
-* The strict `sllb` definition requires tracking the exact location of `ptail`.
-* Standard list traversal (via `sll`) loses the correlation between the list end and the `ptail` pointer location.
-* Upon returning, we cannot mathematically prove that the tail of the traversed list matches the original `ptail` without introducing complex auxiliary variables.
-
-### Solution: The `sllb_sll` View
-To resolve this, we utilize a relaxed predicate `sllb_sll` (defined in `sll_project_lib.v`, L60) for operations that do not alter the list structure.
+定义在 `sll_project_lib.v` 第60行，用于只读或不改变结构的操作：
 
 ```coq
 Definition sllb_sll (x: addr) (l: list Z): Assertion :=
   [| x <> 0 |] &&
   EX h: addr,
     &(x # "sllb" ->ₛ "head") # Ptr |-> h **
-    &(x # "sllb" ->ₛ "ptail") # Ptr |-> 0 ** (* Tail tracking relaxed/ignored *)
+    &(x # "sllb" ->ₛ "ptail") # Ptr |-> 0 **
     sll h l.
-
 ```
 
-This predicate views the "box" merely as a container for a standard singly linked list `sll`, purposefully ignoring the strict `ptail` invariants. This allows us to verify traversal logic without the burden of tail pointer arithmetic.
+**用途**：
+- 只读遍历（`sllb2array`、`map_list_box`）
+- 释放操作（`free_list_box`）
+- 避免尾指针精度问题，简化验证
 
-## 2. Strategy-Based Proof Architecture
+### 2.3 辅助谓词
 
-Our verification relies on a "Strategy" pattern where complex entailments generated by the QCP logic generator are isolated into `sll_project_strategy_proof.v`. This allows us to prove specific logic transitions (Strategies) independently of the main C program verification.
+- **`sllbseg x y l`**：从地址 `x` 开始、到地址 `y`（指针位置）结束的链表段
+- **`sll_pt h pt l`**：标准链表 `sll h l` 的扩展，额外暴露尾指针地址 `pt`
 
-### 2.1 View-Shift Strategies (`sllb`  `sll`)
+### 2.4 谓词组合策略与设计原理
 
-For `sllb2array`, the verification relies on shifting between the box view and the list view.
+本项目使用两套谓词组合，根据函数的操作类型选择：
 
-* **Strategy 35 (Unfold)**:
-Proves that `sllb_sll` implies the existence of a standard `sll`. This allows the C function to pass `box->head` to `sll2array` or `map_list`.
-> **Proof (`sll_project_strategy35_correctness`):**
-> We use `unfold sllb_sll` and `Intros h` to expose the head pointer `h` and the inner `sll h l` resource, satisfying the precondition of the inner function call.
+#### 组合 1：`sll_pt` + `sllb/sllbseg` - 精确跟踪模式
 
-* **Strategy 36 (Fold)**:
-Proves the reverse: restoring `sllb_sll` from an `sll`.
-> **Proof (`sll_project_strategy36_correctness`):**
-> After the helper function returns `sll h l`, we simply `Exists h` and repackage the resources. Because `sllb_sll` does not demand `ptail` precision, this entailment is trivial compared to the strict `sllb` reconstruction.
+**适用场景**：需要保留尾指针信息以完成**链表连接**操作
 
-## 3 Fully Automated Verification via Stratrgies
+**使用函数**：
+- `cons_list` - 使用 `sll_pt`，返回新的尾指针位置
+- `cons_list_box` - 使用 `sllbseg`，调用 `cons_list` 完成插入
+- `app_list_box` - 使用 `sllb`，展开为 `sllbseg` + `sll_pt` 完成合并
 
-### 3.1 Fully Automated Verification of `map_list_box`
+**核心思想**：
+- 精确跟踪 `ptail` 的具体值（而非存在量化）
+- 通过 `which implies` 将 `pt` 显式读取到 C 变量中
+- 避免使用会丢失 `pt` 信息的谓词转换
+- 能够在函数返回时重建 `sllb` 谓词
 
-A testament to the effective design of our strategies is the verification of `map_list_box`. This function required **zero manual proof**. The logic generator's output was entirely solved by the strategies defined in `sll_project_strategy_proof.v`.
+**关键引理**：
+- `sllbseg_append_sllbseg`：连接两个链表段，保持尾指针精确性
+- `sllb_2_sllbseg`：将 `sllb` 展开为 `sllbseg` 暴露尾指针
 
-#### 3.1.1 The Logic Flow
-The function is a simple wrapper:
-1.  **Entry (`map_list_box_which_implies_wit_1`)**: The automation engine matches this entailment against **Strategy 35**. The `sllb_sll` resource is automatically unfolded to expose `sll h l` and `box->head`.
-2.  **Function Call**: `map_list(box->head, x)` is called. The precondition `sll h l` is satisfied by the result of Step 1.
-3.  **Return (`map_list_box_return_wit_1`)**: The automation engine matches the post-state (where `map_list` returns `sll h (map_mult x l)`) against **Strategy 36**. It automatically folds the resources back into `sllb_sll`.
+#### 组合 2：`sll` + `sllb_sll` - 宽松遍历模式
 
-#### 3.1.2 The `map_mult` Auxiliary Predicate
-To specify the behavior of mapping multiplication over a list, we defined `map_mult` in `sll_project_lib.v`:
+**适用场景**：只读遍历或不需要后续连接的操作
 
+**使用函数**：
+- `map_list` - 使用 `sll`，修改数据但不改变结构
+- `map_list_box` - 使用 `sllb_sll`，调用 `map_list`
+- `sll2array` - 使用 `sll`，转换为数组
+- `sllb2array` - 使用 `sllb_sll`，调用 `sll2array`
+- `free_list` - 使用 `sll`，释放链表
+- `free_list_box` - 使用 `sllb`（在 `which implies` 中转换为 `sll`）
+
+**核心思想**：
+- 采用 `sllb_sll` **放弃尾指针精确跟踪**，避免精确性问题（详见 [precision_problem_analysis.md](precision_problem_analysis.md)）
+- 内部调用使用 `sll` 谓词的循环函数时，谓词转换链路清晰
+- **代价**：无法在函数返回后进行链表连接操作
+- **收益**：既然目标是转数组/释放/只读操作，不需要后续连接是可接受的
+
+**设计权衡**：
+- 如果内部需要调用带循环的 `sll` 函数（如 `sll2array`），保持 `sllbseg` 会导致精确性问题
+- 因为 `sll` 遍历会丢失 `pt` 与原始值的关联（存在量化变量在转换中失去联系）
+- 使用 `sllb_sll` 从一开始就放弃 `pt` 跟踪，与内部 `sll` 谓词完美匹配
+
+**关键引理**：
+- `sllb_sll_2_sll`（Strategy 35）：展开 `sllb_sll` 暴露内部 `sll`
+- `sll_2_sllb_sll`（Strategy 36）：从 `sll` 重建 `sllb_sll`
+
+---
+
+## 3. 函数验证
+
+本项目验证了12个函数，分为以下两类：
+
+### 3.1 辅助函数（6个）
+
+标准单向链表（`sll`）的基础操作，为关键函数提供支撑。
+
+#### 3.1.1 `cons_list` - 链表头部插入
+
+```c
+struct sll *cons_list(unsigned int data, struct sll *next)
+/*@ With l pt
+    Require sll_pt(next, pt, l)
+    Ensure exists pt_new,
+           sll_pt(__return, pt_new, cons(data, l)) &&
+           (l == nil && pt_new == &(__return -> next) || l != nil && pt_new == pt)
+*/
+```
+
+**功能**：创建新节点，插入到链表头部。
+
+**规约说明**：
+- 使用 `sll_pt` 谓词暴露尾指针 `pt`
+- 返回值保证：新链表的尾指针根据原链表是否为空而不同
+  - 原链表为空：新尾指针指向新节点的 `&next`
+  - 原链表非空：尾指针保持不变
+
+#### 3.1.2 `free_list` - 释放整个链表
+
+```c
+void free_list(struct sll *head)
+/*@ With l
+    Require sll(head, l)
+    Ensure emp
+*/
+{
+  /*@ Inv exists l_rest, sll(head, l_rest) */
+  while (head) {
+    struct sll *tmp = head;
+    head = head->next;
+    free_list_node(tmp);
+  }
+}
+```
+
+**功能**：遍历链表并释放所有节点。
+
+**循环不变量**：`sll(head, l_rest)` 表示剩余未释放的链表段。
+
+#### 3.1.3 `map_list` - 链表元素映射
+
+```c
+void map_list(struct sll *head, unsigned int x)
+/*@ With l
+    Require sll(head, l)
+    Ensure sll(head, map_mult(x, l))
+*/
+{
+  /*@ Inv exists l1 l2, l == app(l1, l2) &&
+          sllseg(head@pre, p, map_mult(x@pre, l1)) * sll(p, l2) &&
+          head == head@pre && x == x@pre
+  */
+  for (p = head; p != (struct sll *)0; p = p->next) {
+    p->data = x * p->data;
+  }
+}
+```
+
+**功能**：将链表中每个元素乘以 `x`（模 2^32）。
+
+**循环不变量**：
+- 链表分为已处理段 `sllseg(..., l1)` 和未处理段 `sll(..., l2)`
+- 已处理段的数据已完成映射操作
+
+**逻辑定义**（`sll_project_lib.v`）：
 ```coq
 Definition map_mult (x: Z) (l: list Z): list Z :=
   List.map (fun a => unsigned_last_nbits (x * a) 32) l.
 ```
 
-This definition lifts the C-level multiplication (modulo $2^{32}$) to the logical level. The automation relies on standard list properties (e.g., `map_app`) to prove that processing the list element-by-element in the loop matches this high-level definition.
+#### 3.1.4 `sll_length` - 计算链表长度
 
-### 3.2 Fully Automated Verification of `free_list_box`
-
-Similar to `map_list_box`, the deallocation function `free_list_box` is verified automatically by leveraging the view-shift strategies to separate the container from its content.
-
-#### The Logic Flow
-
-The verification engine proves the memory safety of freeing the structure without manual intervention by matching the annotated implication against our defined strategies:
-
-1. **View Separation (`free_list_box_which_implies_wit_1`)**:
-The function annotation specifies an implication that transforms `sllb(box, l)` into `sll(h, l)`. The automation engine successfully matches this against **Strategy 32**.
-
-* **Strategy 32**: This strategy formally proves that a list box `sllb` implies the existence of a standard linked list `sll` pointed to by `box->head`, effectively separating the "box" resource from the "list" resource.
-
-* **Proof**: The underlying proof in `sll_project_strategy_proof.v` uses the lemma `sllb_2_sll` to justify this separation.
-
-1. **Resource Consumption**:
-* `free_list(box->head)` is called, consuming the `sll(h, l)` resource exposed by Strategy 32.
-
-* `free_sllb(box)` is called, consuming the fields of the box itself (`box->head` and `box->ptail`).
-
-3. **Return (`free_list_box_return_wit_1`)**:
-After both the list content and the box container are freed, the remaining resource is `emp`. This matches the postcondition `Ensure emp` trivially, completing the proof.
-
-### 3.3 Fully Automated Verification of `nil_list_box`
-
-The `nil_list_box` function constructs an empty list box. Its verification highlights how our strategies handle initialization and base cases.
-
-#### The Logic Flow
-
-1. **Allocation**:
-`new_sllb()` allocates a raw box structure. The verification engine tracks the uninitialized fields.
-2. **Base Case Initialization**:
-`box->head = nil_list()` is called. The `nil_list` function ensures `sll(0, nil)`. The automation implicitly relies on **Strategy 3** (or standard logical simplification), which equates `sll p nil` with `p = NULL`, confirming that `box->head` is set to `0`.
-
-3. **Structural Wiring**:
-The assignment `box->ptail = &box->head` establishes the characteristic invariant of an empty `sllb`: the tail pointer must point to the head pointer itself.
-
-4. **Return Verification**:
-Unlike other functions that return an `sllb` predicate, `nil_list_box` explicitly ensures the low-level structure:
 ```c
-Ensure ... store(&(__return -> head), 0) * store(&(__return -> ptail), &(__return -> head))
+unsigned int sll_length(struct sll *head)
+/*@ With l
+    Require sll(head, l) && Zlength(l) <= 2147483647
+    Ensure __return == Zlength(l) && sll(head@pre, l)
+*/
+{
+  unsigned int len = 0;
+  /*@ Inv exists l1 l2,
+          l == app(l1, l2) &&
+          len == Zlength(l1) &&
+          sllseg(head@pre, head, l1) * sll(head, l2)
+  */
+  while (head) {
+    ++len;
+    head = head->next;
+  }
+  return len;
+}
 ```
 
-Because the postcondition describes the exact physical memory state created by the assignments (rather than a folded `sllb` predicate), the automation engine verifies this strictly through symbolic execution without needing a complex "Fold" strategy. This demonstrates the flexibility of our specification design—using precise structural descriptions for constructors to simplify verification.
+**功能**：统计链表节点数量，不修改链表结构。
 
-## 4. Array Verification Strategies (`sll2array`)
+**关键性质**：后置条件保证原链表 `sll(head@pre, l)` 保持不变（只读操作）。
 
-The core complexity of `sllb2array` lies in `sll2array`, which allocates and fills a C array. The verification uses `UIntArray` predicates from the separation logic library.
+#### 3.1.5 `sll2array` - 链表转数组
 
-### Loop Invariant Design
+```c
+unsigned int sll2array(struct sll *head, unsigned int **out_array)
+/*@ With l
+    Require sll(head, l) && Zlength(l) <= 2147483647 && 
+            undef_data_at(out_array, unsigned int *)
+    Ensure exists arr_ret,
+           sll(head@pre, l) &&
+           store(out_array@pre, unsigned int *, arr_ret) &&
+           UIntArray::full_shape(arr_ret, Zlength(l))
+*/
+{
+  unsigned int len = sll_length(head);
+  unsigned int *arr = new_uint_array(len);
+  unsigned int i = 0;
+  struct sll *p = head;
+  
+  /*@ Inv exists l1 l2,
+          l == app(l1, l2) &&
+          i == Zlength(l1) &&
+          sllseg(head@pre, p, l1) * sll(p, l2) *
+          UIntArray::ceil_shape(arr, 0, i) *      // 已填充 [0, i)
+          UIntArray::undef_ceil(arr, i, len)      // 未初始化 [i, len)
+  */
+  while (p) {
+    arr[i] = p->data;
+    i = i + 1;
+    p = p->next;
+  }
+  *out_array = arr;
+  return len;
+}
+```
 
-The loop in `sll2array` maintains an invariant splitting the array into two logical segments:
+**功能**：分配数组并复制链表元素。
 
-1. **`UIntArray.ceil_shape arr 0 i`**: The filled portion of the array (indices  to ).
-2. **`UIntArray.undef_ceil arr i len`**: The allocated but uninitialized portion (indices  to ).
+**循环不变量设计**：
+- 数组分为已填充部分 `ceil_shape(arr, 0, i)` 和未定义部分 `undef_ceil(arr, i, len)`
+- 链表分为已遍历段 `sllseg(..., l1)` 和剩余段 `sll(..., l2)`
 
-### Key Array Lemmas
+**数组验证策略**：
+- **Strategy 72**：证明可安全写入 `arr[i]`，分割未定义段
+- **Strategy 92**：循环结束时，`ceil_shape(arr, 0, len)` 等价于 `full_shape(arr, len)`
 
-The strategies in `sll_project_strategy_proof.v` rigorously prove the spatial safety of this split.
+#### 3.1.6 `nil_list` - 创建空链表
 
-* **Strategy 72: Array Splitting (L128)**
-This strategy justifies writing to `arr[i]`. It proves that an undefined segment from  to  can be split into a single writable element at  and a remaining segment starting at .
-* **Logic**:
+```c
+struct sll *nil_list()
+/*@ Require emp
+    Ensure sll(__return, nil)
+*/
+{
+  return (struct sll *)0;
+}
+```
+
+**功能**：返回空指针表示空链表。
+
+**规约**：从空资源生成 `sll(NULL, nil)`。
+
+---
+
+### 3.2 关键函数（6个）
+
+List Box（`sllb`）结构的核心操作，实现高效尾部访问。
+
+#### 3.2.1 `nil_list_box` - 创建空 List Box
+
+```c
+struct sllb *nil_list_box()
+/*@ Require emp
+    Ensure __return != 0 &&
+           store(&(__return -> head), struct sll *, 0) *
+           store(&(__return -> ptail), struct sll **, &(__return -> head))
+*/
+{
+  struct sllb *box = new_sllb();
+  box->head = nil_list();
+  box->ptail = &box->head;
+  return box;
+}
+```
+
+**功能**：初始化一个空 List Box。
+
+**关键初始化**：
+- `box->head = NULL`
+- `box->ptail = &box->head`（空链表不变量：尾指针指向头指针本身）
+
+**验证特性**：
+- 后置条件直接描述物理内存状态（而非折叠的 `sllb` 谓词）
+- 全自动验证，无需手动证明
+
+#### 3.2.2 `cons_list_box` - List Box 头部插入
+
+```c
+struct sllb *cons_list_box(unsigned int data, struct sllb *box)
+/*@ With l pt
+    Require box != 0 &&
+            (pt == &(box -> head) && l == nil || 
+             pt != &(box -> head) && l != nil) &&
+            store(&(box -> ptail), struct sll **, pt) *
+            sllbseg(&(box -> head), pt, l) *
+            store(pt, struct sll *, 0)
+    Ensure exists pt_new,
+           __return != 0 &&
+           store(&(__return -> ptail), struct sll **, pt_new) *
+           sllbseg(&(__return -> head), pt_new, cons(data, l)) *
+           store(pt_new, struct sll *, 0)
+*/
+{
+  box->head = cons_list(data, box->head);
+  if (box->ptail == &box->head) {
+    box->ptail = &(box->head->next);
+  }
+  return box;
+}
+```
+
+**功能**：在 List Box 头部插入新元素。
+
+**核心逻辑**：
+- 调用 `cons_list` 在头部插入节点
+- **条件更新**：如果原本是空链表，更新 `ptail` 指向新节点的 `&next`
+
+**验证分两个情况**（`sll_project_proof_manual.v`）：
+
+1. **空链表情况**（`cons_list_box_return_wit_1`，第99行）：
+   ```coq
+   Exists (&(retval # "sll" ->ₛ "next")).
+   ```
+   - 原 `ptail` 指向 `&box->head`
+   - 插入后 `ptail` 必须指向新节点的 `&next` 字段
+   - 对应 C 代码第122-123行的指针更新
+
+2. **非空链表情况**（`cons_list_box_return_wit_2`，第114行）：
+   ```coq
+   Exists pt.
+   ```
+   - `ptail` 已指向末尾节点的 `&next`，插入头部不影响尾指针
+   - 链表段扩展一个节点，尾指针 `pt` 保持有效
+
+#### 3.2.3 `map_list_box` - List Box 元素映射
+
+```c
+struct sllb *map_list_box(struct sllb *box, unsigned int x)
+/*@ With l
+    Require sllb_sll(box, l)
+    Ensure sllb_sll(__return, map_mult(x, l))
+*/
+{
+  map_list(box->head, x);
+  return box;
+}
+```
+
+**功能**：对 List Box 中的所有元素应用乘法映射。
+
+**验证特性**：**完全自动化**，无需手动证明。
+
+**验证流程**：
+
+1. **入口展开（Strategy 35）**：
+   ```coq
+   sllb_sll(box, l) ⊢ exists h,
+     store(&(box->head), h) * sll(h, l) * ...
+   ```
+   - 暴露内部链表 `sll h l` 和 `box->head`
+   - 满足 `map_list` 的前置条件
+
+2. **函数调用**：
+   - `map_list(box->head, x)` 修改节点数据
+   - 返回 `sll(h, map_mult(x, l))`
+
+3. **返回折叠（Strategy 36）**：
+   ```coq
+   sll(h, map_mult(x, l)) ⊢ sllb_sll(box, map_mult(x, l))
+   ```
+   - 重新打包为 `sllb_sll`
+
+**设计思想**：使用宽松谓词 `sllb_sll` 避免跟踪 `ptail` 精度，因为映射操作不改变链表结构。
+
+#### 3.2.4 `free_list_box` - 释放 List Box
+
+```c
+void free_list_box(struct sllb *box)
+/*@ With l
+    Require sllb(box, l)
+    Ensure emp
+*/
+{
+  free_list(box->head);
+  free_sllb(box);
+}
+```
+
+**功能**：释放 List Box 及其内部链表。
+
+**验证特性**：**完全自动化**，无需手动证明。
+
+**验证流程**：
+
+1. **资源分离（Strategy 32）**：
+   ```coq
+   sllb(box, l) ⊢ exists h pt,
+     box->head == h && box->ptail == pt && sll(h, l)
+   ```
+   - 将 `sllb` 分解为容器字段和内容链表
+   - 使用引理 `sllb_2_sll` 证明此蕴含关系
+
+2. **资源消耗**：
+   - `free_list(box->head)` 消耗 `sll(h, l)` 资源
+   - `free_sllb(box)` 消耗 `box` 的字段资源
+
+3. **返回验证**：
+   - 所有资源释放完毕，剩余 `emp`
+   - 满足后置条件
+
+#### 3.2.5 `app_list_box` - sllb 合并
+
+```c
+struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
+/*@ With l1 l2
+    Require sllb(b1, l1) * sllb(b2, l2)
+    Ensure sllb(__return, app(l1, l2))
+*/
+{
+  struct sll *h2 = b2->head;
+  struct sll **pt2 = b2->ptail;
+  *(b1->ptail) = h2;              // 关键操作：将 b2 的头连接到 b1 的尾
+  if (h2 != (struct sll *)0) {
+    b1->ptail = pt2;              // 更新 b1 的尾指针为 b2 的尾指针
+  }
+  free_sllb(b2);
+  return b1;
+}
+```
+
+**功能**：将 List Box `b2` 合并到 `b1` 的尾部，常数时间完成。
+
+**验证逻辑**（`sll_project_proof_manual.v`）：
+
+1. **前置条件展开**（`app_list_box_which_implies_wit_1`，第162行）：
+   ```coq
+   sep_apply (sllb_2_sllbseg b1 l1).
+   sep_apply (sllb_2_sll_pt b2 l2).
+   ```
+   - 将 `sllb(b1, l1)` 展开为 `sllbseg` 形式，暴露尾指针 `pt1`
+   - 将 `sllb(b2, l2)` 展开为 `sll_pt` 形式，暴露头指针 `h2` 和尾指针 `pt2`
+
+2. **非空情况合并**（`app_list_box_return_wit_2`，第150行）：
+   ```coq
+   sep_apply (sllbseg_append_sllbseg 
+     (&(b1_pre # "sllb" ->ₛ "head")) pt1 l1 h2 pt2 z l2 H).
+   sep_apply (sllbseg_2_sllb b1_pre pt2 (l1 ++ z :: l2) H0).
+   ```
+   - 第一步：证明指针更新 `*(b1->ptail) = h2` 的正确性，应用核心引理将两段链表逻辑连接
+   - 第二步：重新折叠为 `sllb` 谓词，确认新的 `ptail = pt2` 满足不变量
+
+3. **空链表情况**（`app_list_box_return_wit_1`）：
+   - 当 `b2` 为空（`l2 = nil`），`b1` 的 `ptail` 保持不变
+
+**核心引理**：`sllbseg_append_sllbseg`
+
 ```coq
-UIntArray.undef_ceil p x y |-- 
-UIntArray.undef_ceil p (x + 1) y ** poly_undef_store ... (at p + x)
-
+sllbseg x pt1 l1 ** pt1 # Ptr |-> h2 ** sll_pt h2 pt2 l2
+|-- sllbseg x pt2 (l1 ++ a :: l2)
 ```
 
+- **基础情况**（`l1 = nil`）：`sllbseg x pt1 nil` 意味着 `x = pt1`，资源 `pt1 # Ptr |-> h2` 成为新链表段的头节点
+- **归纳步骤**：展开 `l1 = h :: t`，对尾部 `t` 应用归纳假设，将连接点"拉链式"向后传递
 
-* **Proof**: Utilizes `UIntArray.undef_ceil_split_to_undef_ceil` and `UIntArray.undef_ceil_unfold` to isolate the memory address `p + x` for the store operation.
+#### 3.2.6 `sllb2array` - List Box 转数组
 
+```c
+unsigned int sllb2array(struct sllb *box, unsigned int **out_array)
+/*@ With l
+    Require sllb_sll(box, l) && Zlength(l) <= 2147483647 &&
+            undef_data_at(out_array, unsigned int *)
+    Ensure exists arr_ret,
+           sllb_sll(box@pre, l) *
+           store(out_array@pre, unsigned int *, arr_ret) *
+           UIntArray::full_shape(arr_ret, Zlength(l))
+*/
+{
+  return sll2array(box->head, out_array);
+}
+```
 
-* **Strategy 92: Full Shape Realization (L145)**
-When the loop terminates (), this strategy proves that a `ceil_shape` from  to  is equivalent to a `full_shape` of size , satisfying the postcondition of `sll2array`.
+**功能**：将 List Box 转换为数组，内部调用 `sll2array`。
 
-## 4. Conclusion on Strategy Proofs
+**验证特性**：简单包装函数，通过策略35展开 `sllb_sll` 后调用辅助函数。
 
-By offloading the complex spatial arithmetic of arrays (Strategies 70-93) and the structural view-shifts of linked lists (Strategies 30-36) into `sll_project_strategy_proof.v`, we achieved a modular verification.
+---
 
-* **Success**: We successfully verified `sllb2array` without `Admitted` lemmas by adopting `sllb_sll` to bypass the tail-precision problem.
-* **Robustness**: The array strategies provide a reusable foundation for any future array-manipulation functions in this project, ensuring bounds safety via formal logic.
+## 4. 验证架构
+
+### 4.1 文件组织
+
+| 文件 | 内容 |
+|------|------|
+| `sll_project_lib.v` | 谓词定义、引理库 |
+| `sll_project_lib.c` | C 源代码 + 形式化规约（注释） |
+| `sll_project.strategies` | 策略规则定义 |
+| `sll_project_strategy_proof.v` | 策略正确性证明 |
+| `sll_project_proof_manual.v` | 核心函数手动证明 |
+| `sll_project_proof_auto.v` | 自动生成的证明框架 |
+
+### 4.2 策略分类
+
+策略分为以下类别：
+- **sll 基础**（3-7）：标准链表性质
+- **sllseg 段操作**（14-16）：链表段分割合并
+- **sllbseg 尾指针段**（20-22）：List Box 专用段操作
+- **sllb / sllb_sll 视图转换**（30-38）：精确/宽松谓词转换
+- **链表操作**（40-61）：长度、映射、合并等
+- **数组操作**（70-93）：数组分配、边界、形状转换
+
+## 5. 文档资源
+
+- **[sllb_lemmas_guide.md](sllb_lemmas_guide.md)**：引理详细文档
+- **[app_list_box_verification_notes.md](app_list_box_verification_notes.md)**：合并函数验证笔记
+- **[sllb2array_verification_notes.md](sllb2array_verification_notes.md)**：数组转换验证笔记
+- **[precision_problem_analysis.md](precision_problem_analysis.md)**：分离逻辑精确性问题分析
+- **[SubmissionFiles/](SubmissionFiles/)**：所有关键文件汇总
+
+更详细的构建说明请参考[主 README](../README.md)。
+
