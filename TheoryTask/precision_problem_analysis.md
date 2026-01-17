@@ -2,23 +2,13 @@
 
 ## 问题概述
 
-在验证 List Box（`sllb`）相关函数时，遇到了分离逻辑中的**精确性问题（Precision Problem）**。核心问题是：**当谓词转换链中存在会丢失尾指针 `pt` 信息的步骤时，无法在函数返回时重建需要精确 `pt` 值的原始谓词**。
+在验证 List Box（`sllb`）相关函数时，我们遇到了分离逻辑中的精确性问题。问题的核心在于：当谓词转换链中存在会丢失尾指针 `pt` 信息的步骤时，我们无法在函数返回时重建需要精确 `pt` 值的原始谓词。这个问题的根源是存在量化变量在谓词转换过程中失去了与原始具体值的联系。
 
-本文档分析了两种验证策略的成功与失败案例，阐明了谓词组合选择的设计原理。
+考虑一个典型的场景：初始状态下我们有精确的 `pt` 值（通过 C 变量 `box->ptail` 读取），但当转换为 `sll` 或 `sllseg` 时，`pt` 信息被丢弃。函数返回时，使用引理重建 `sllbseg` 会引入新的存在量化变量 `pt_new`，而我们无法证明 `pt_new = pt`，因为原始 `pt` 的信息已经在转换中丢失了。
 
-## 问题本质
+## 成功案例：`app_list_box`
 
-精确性问题的根源：**存在量化变量在谓词转换过程中失去与原始具体值的联系**。
-
-具体表现为：
-1. 初始状态有精确的 `pt` 值（例如通过 C 变量 `box->ptail` 读取）
-2. 转换为 `sll` 或 `sllseg` 时，`pt` 信息被丢弃
-3. 函数返回时，使用引理重建 `sllbseg` 会引入**新的存在量化变量** `pt_new`
-4. 无法证明 `pt_new = pt`（原始值），因为 `pt` 的信息已经在转换中丢失
-
-## 成功案例：`app_list_box` - 精确跟踪模式
-
-### 函数规约
+`app_list_box` 的验证完全成功，没有任何 `Admitted`。这个函数将两个 List Box 合并，要求在返回时保持精确的 `sllb` 谓词。
 
 ```c
 struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
@@ -35,44 +25,22 @@ struct sllb *app_list_box(struct sllb *b1, struct sllb *b2)
           store(&(b2 -> head), h2) * store(&(b2 -> ptail), pt2) *
           sll_pt(h2, pt2, l2)
   */
-  struct sll *h2 = b2->head;        // 显式读取到 C 变量
-  struct sll **pt2 = b2->ptail;     // 显式读取到 C 变量
+  struct sll *h2 = b2->head;
+  struct sll **pt2 = b2->ptail;
   *(b1->ptail) = h2;
   if (h2 != (struct sll *)0) {
-    b1->ptail = pt2;                // 使用具体的 C 变量
+    b1->ptail = pt2;
   }
   free_sllb(b2);
   return b1;
 }
 ```
 
-### 成功关键
+成功的关键在于三点。首先，`which implies` 子句显式引入了存在变量 `pt1`、`h2` 和 `pt2`，这些变量立即通过 C 赋值语句绑定到具体值。其次，函数本身不调用任何会丢失 `pt` 的子函数——所有操作都是直接的指针操作，全程保持 `sllbseg` 和 `sll_pt` 结构。最后，重建 `sllb` 时使用的引理（`sllbseg_append_sllbseg` 和 `sllbseg_2_sllb`）都能保持精确性，因为所有 `pt` 值都是明确的 C 变量。
 
-1. **`which implies` 显式引入存在变量 `pt1, h2, pt2`**
-   - 立即通过 C 赋值语句将它们绑定到具体值
-   - `h2 = b2->head` 和 `pt2 = b2->ptail` 使得后续可以直接使用这些 C 变量
+## 挑战案例：`sllb2array`
 
-2. **不调用会丢失 `pt` 的子函数**
-   - 直接指针操作，没有循环遍历
-   - 不需要转换为 `sll` 或 `sllseg`
-   - 全程保持 `sllbseg` + `sll_pt` 结构
-
-3. **使用保持精确性的引理重建 `sllb`**
-   - `sllbseg_append_sllbseg`：合并链表段，所有 `pt` 值都是明确的 C 变量
-   - `sllbseg_2_sllb`：从 `sllbseg` 重建 `sllb`，使用具体的 `pt` 值
-
-### 验证结果
-
-所有证明都是 `Qed`（完全验证），无 `Admitted`：
-- `proof_of_app_list_box_which_implies_wit_1` ✓
-- `proof_of_app_list_box_return_wit_1` ✓
-- `proof_of_app_list_box_return_wit_2` ✓
-
-## 挑战案例：`sllb2array` - 精确性陷阱
-
-### 问题场景
-
-如果 `sllb2array` 尝试使用 `sllbseg` 谓词并保持 `pt` 跟踪：
+相比之下，如果 `sllb2array` 尝试保持 `pt` 跟踪就会陷入精确性陷阱。
 
 ```c
 unsigned int sllb2array(struct sllb *box, unsigned int **out_array)
@@ -86,133 +54,48 @@ unsigned int sllb2array(struct sllb *box, unsigned int **out_array)
 }
 ```
 
-### 精确性陷阱
+问题在于 `sllb2array` 必须调用 `sll2array`，而 `sll2array` 的规约使用 `sll(head, l)`。这意味着我们必须将 `sllbseg(..., pt, l)` 转换为 `sll(h, l)`，而在这个转换过程中 `pt` 信息被丢弃了。更糟糕的是，`sll2array` 内部的循环不变量使用 `sllseg(..., l1) * sll(..., l2)`，整个遍历过程完全不涉及尾指针跟踪。函数返回时，我们只能使用引理 `sll h l |-- EX pt_new, sllbseg(..., pt_new, l)` 来重建 `sllbseg`，但这里的 `pt_new` 是新引入的存在变量，与原始的 `pt` 毫无关系。这个问题无法通过技巧解决，我们需要一个引理 `sll h l |-- sll_pt h pt l`，但这在没有额外资源的情况下无法证明，因为 `sll` 根本不包含关于尾指针位置的任何信息。
 
-1. **必须转换为 `sll` 才能调用 `sll2array`**
-   - `sll2array` 规约使用 `sll(head, l)`
-   - 转换过程：`sllbseg(..., pt, l)` → `sll(h, l)`
-   - **`pt` 信息在此丢失**
+## 解决方案：两套谓词组合
 
-2. **内部 `sll2array` 使用 `sll` 和 `sllseg`**
-   - 循环不变量：`sllseg(..., l1) * sll(..., l2)`
-   - 遍历过程完全不涉及尾指针跟踪
+基于上述分析，我们设计了两套谓词组合策略。
 
-3. **返回时无法重建原始 `sllbseg`**
-   - 只能使用引理：`sll h l |-- EX pt_new, sllbseg(..., pt_new, l)`
-   - `pt_new` 是**新引入的存在变量**，与原始 `pt` 无关
-   - 无法证明 `pt_new = pt`，因为 `pt` 的值已在转换中丢失
+**精确跟踪模式**使用 `sll_pt`、`sllb` 和 `sllbseg` 谓词，适用于需要后续连接操作的函数，如 `cons_list`、`cons_list_box` 和 `app_list_box`。这些函数必须通过 `which implies` 显式引入尾指针变量，并立即读取到 C 变量中绑定具体值。关键在于全程保持 `sllbseg`/`sll_pt` 结构，避免调用会丢失尾指针信息的子函数（如带 `sll` 循环的函数），并使用保持精确性的引理完成验证。
 
-### 为何无法修复
+**宽松遍历模式**则主动放弃尾指针跟踪，使用 `sllb_sll` 和 `sll` 谓词。这种模式适用于只读遍历、转换或不需要后续连接的操作，如 `map_list`、`sll2array`、`sllb2array` 和 `free_list_box`。通过一开始就不跟踪尾指针，完全避免了精确性问题。代价是无法在函数返回后进行链表连接，但对于转数组、释放或只读操作来说，这是可接受的。内部可以安全调用任何使用 `sll` 规约的函数，谓词转换链路清晰，部分验证甚至可以全自动完成。
 
-**缺失的引理**（无法证明）：
-
-```coq
-Lemma sll_to_sll_pt_preserve: forall h pt l,
-  sll h l |-- sll_pt h pt l.  (* 无法证明：sll 不包含 pt 信息 *)
-```
-
-这个引理无法证明，因为：
-- `sll h l` 只描述链表结构，不包含任何关于尾指针位置的信息
-- `sll_pt h pt l` 需要额外的 `pt` 信息
-- 在没有额外资源的情况下，无法从 `sll` 推导出具体的 `pt` 值
-
-## 解决方案：两套谓词组合策略
-
-### 策略 1：精确跟踪模式（`sll_pt` + `sllb/sllbseg`）
-
-**适用场景**：需要保留尾指针信息以完成**链表连接**操作
-
-**应用函数**：
-- `cons_list` - 使用 `sll_pt`，返回新的尾指针位置
-- `cons_list_box` - 使用 `sllbseg`，调用 `cons_list`
-- `app_list_box` - 使用 `sllb`，展开为 `sllbseg` + `sll_pt`
-
-**核心原则**：
-1. 通过 `which implies` 显式引入 `pt` 变量
-2. 立即读取到 C 变量，绑定具体值
-3. 避免调用会丢失 `pt` 的子函数（如带 `sll` 循环的函数）
-4. 全程保持 `sllbseg`/`sll_pt` 结构
-5. 使用保持精确性的引理完成验证
-
-### 策略 2：宽松遍历模式（`sll` + `sllb_sll`）
-
-**适用场景**：只读遍历、转换或不需要后续连接的操作
-
-**应用函数**：
-- `map_list` - 使用 `sll`
-- `map_list_box` - 使用 `sllb_sll`，调用 `map_list`
-- `sll2array` - 使用 `sll`
-- `sllb2array` - 使用 `sllb_sll`，调用 `sll2array`
-- `free_list_box` - 使用 `sllb`（在 `which implies` 中转换为 `sll`）
-
-**核心原则**：
-1. 使用 `sllb_sll` **主动放弃尾指针跟踪**
-2. 内部调用使用 `sll` 规约的函数，谓词转换链路清晰
-3. 避免精确性问题，因为从一开始就不跟踪 `pt`
-4. **代价**：无法在函数返回后进行链表连接操作
-5. **收益**：既然目标是转数组/释放/只读操作，不需要后续连接是可接受的
-
-### 设计权衡
-
-| 方面 | 精确跟踪模式 | 宽松遍历模式 |
-|------|-------------|-------------|
-| **谓词** | `sllb`, `sllbseg`, `sll_pt` | `sllb_sll`, `sll`, `sllseg` |
-| **尾指针** | 精确跟踪具体值 | 放弃跟踪（设为 0） |
-| **适用操作** | 链表连接、结构修改 | 只读遍历、转换、释放 |
-| **能调用子函数** | 仅限保持 `pt` 的函数 | 任何 `sll` 规约的函数 |
-| **验证复杂度** | 需要手动证明 | 部分可全自动验证 |
-| **后续连接** | 可以 | 不可以 |
+两种策略的权衡体现在多个方面：精确跟踪模式使用 `sllb`、`sllbseg`、`sll_pt` 谓词，精确跟踪尾指针的具体值，适用于链表连接和结构修改操作，但只能调用保持尾指针的函数，验证需要手动证明；宽松遍历模式使用 `sllb_sll`、`sll`、`sllseg` 谓词，直接将尾指针设为 0 放弃跟踪，适用于只读遍历、转换和释放操作，可以调用任何 `sll` 规约的函数，部分可全自动验证，但无法支持后续连接。
 
 ## 关键引理
 
-### 精确跟踪模式使用的引理
+精确跟踪模式依赖一组保持尾指针精确性的引理。`sllb_2_sllbseg` 和 `sllb_2_sll_pt` 用于展开 `sllb` 并暴露尾指针，`sllbseg_append_sllbseg` 是连接两个链表段的核心引理，而 `sllbseg_2_sllb` 则用于重建 `sllb` 谓词。这些引理都要求 `pt` 值是具体的，而不是存在量化的。
 
 ```coq
-(* 展开 sllb 为 sllbseg，暴露尾指针 *)
 Lemma sllb_2_sllbseg: forall b l,
   sllb b l |-- EX pt, sllbseg(&(b->head), pt, l) ** store(pt, 0).
 
-(* 从 sll_pt 提取尾指针信息 *)
 Lemma sllb_2_sll_pt: forall b l,
   sllb b l |-- EX h pt, store(&(b->head), h) ** sll_pt h pt l.
 
-(* 连接两个链表段，保持尾指针精确性 *)
 Lemma sllbseg_append_sllbseg: forall x pt1 l1 h2 pt2 z l2,
   sllbseg x pt1 l1 ** store(pt1, h2) ** sll_pt h2 pt2 l2 |--
   sllbseg x pt2 (l1 ++ z :: l2).
 
-(* 重建 sllb，使用具体的 pt 值 *)
 Lemma sllbseg_2_sllb: forall b pt l,
   store(&(b->ptail), pt) ** sllbseg(&(b->head), pt, l) ** store(pt, 0) |--
   sllb b l.
 ```
 
-### 宽松遍历模式使用的引理
+宽松遍历模式则使用 Strategy 35 和 36，它们在 `sllb_sll` 和 `sll` 之间进行转换，完全不涉及尾指针跟踪。
 
 ```coq
-(* 展开 sllb_sll 为 sll *)
-Lemma sllb_sll_2_sll: forall b l,  (* Strategy 35 *)
+Lemma sllb_sll_2_sll: forall b l,
   sllb_sll b l |-- EX h, store(&(b->head), h) ** sll h l.
 
-(* 从 sll 重建 sllb_sll *)
-Lemma sll_2_sllb_sll: forall b l,  (* Strategy 36 *)
+Lemma sll_2_sllb_sll: forall b l,
   EX h, store(&(b->head), h) ** sll h l |-- sllb_sll b l.
 ```
 
 ## 总结
 
-精确性问题的核心教训：
-
-1. **明确目标**：函数是否需要后续连接操作？
-   - 需要 → 使用精确跟踪模式
-   - 不需要 → 使用宽松遍历模式
-
-2. **谓词一致性**：保持整个调用链的谓词系统一致
-   - 精确模式：全程使用 `sllbseg`/`sll_pt`，避免转换为 `sll`
-   - 宽松模式：从一开始使用 `sllb_sll`，匹配内部 `sll` 函数
-
-3. **权衡代价**：
-   - 精确模式：验证更复杂，但保留完整功能
-   - 宽松模式：验证更简单（部分全自动），但放弃连接能力
-
-4. **实用主义**：对于 `sllb2array` 这样的函数，目标是转换为数组，后续不需要链表连接，因此使用宽松模式是合理的设计选择。
+精确性问题的核心是理解函数的目标。如果需要后续连接，就必须精确跟踪尾指针，通过 `which implies` 显式引入并使用支持精确性的引理；如果只是遍历、转换或释放，主动放弃跟踪反而简化验证。谓词选择直接决定了验证策略和可调用函数的范围，理解这一点是成功完成 List Box 验证的关键。

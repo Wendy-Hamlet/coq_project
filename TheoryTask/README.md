@@ -83,53 +83,13 @@ Definition sllb_sll (x: addr) (l: list Z): Assertion :=
 
 ### 2.4 谓词组合策略与设计原理
 
-本项目使用两套谓词组合，根据函数的操作类型选择：
+本项目的验证采用了两套不同的谓词组合方案。选择哪套方案取决于函数是否需要在返回后继续进行链表连接操作。
 
-#### 组合 1：`sll_pt` + `sllb/sllbseg` - 精确跟踪模式
+对于需要连接功能的函数（如 `app_list_box` 和 `cons_list_box`），我们使用 `sll_pt` 和 `sllbseg` 来精确跟踪尾指针 `ptail` 的具体值。这种方式要求通过 `which implies` 将 `pt` 显式读取到 C 变量中，并避免调用会丢失 `pt` 信息的子函数。虽然验证更复杂，但能够保证函数返回时精确重建 `sllb` 谓词，从而支持后续的链表操作。
 
-**适用场景**：需要保留尾指针信息以完成**链表连接**操作
+另一方面，对于只读遍历、转换或释放操作（如 `map_list_box`、`sllb2array`、`free_list_box`），我们使用 `sll` 和 `sllb_sll` 组合。这种方式主动放弃尾指针跟踪，将 `ptail` 字段设为 0。这样做避免了精确性问题——当内部需要调用带循环的 `sll` 函数（如 `sll2array`）时，如果保持 `sllbseg` 会导致 `sll` 遍历丢失 `pt` 与原始值的关联。使用 `sllb_sll` 从一开始就放弃 `pt` 跟踪，使谓词转换链路清晰匹配。代价是无法进行后续连接，但对于转数组或释放这样的终结性操作，这是可接受的设计选择。
 
-**使用函数**：
-- `cons_list` - 使用 `sll_pt`，返回新的尾指针位置
-- `cons_list_box` - 使用 `sllbseg`，调用 `cons_list` 完成插入
-- `app_list_box` - 使用 `sllb`，展开为 `sllbseg` + `sll_pt` 完成合并
-
-**核心思想**：
-- 精确跟踪 `ptail` 的具体值（而非存在量化）
-- 通过 `which implies` 将 `pt` 显式读取到 C 变量中
-- 避免使用会丢失 `pt` 信息的谓词转换
-- 能够在函数返回时重建 `sllb` 谓词
-
-**关键引理**：
-- `sllbseg_append_sllbseg`：连接两个链表段，保持尾指针精确性
-- `sllb_2_sllbseg`：将 `sllb` 展开为 `sllbseg` 暴露尾指针
-
-#### 组合 2：`sll` + `sllb_sll` - 宽松遍历模式
-
-**适用场景**：只读遍历或不需要后续连接的操作
-
-**使用函数**：
-- `map_list` - 使用 `sll`，修改数据但不改变结构
-- `map_list_box` - 使用 `sllb_sll`，调用 `map_list`
-- `sll2array` - 使用 `sll`，转换为数组
-- `sllb2array` - 使用 `sllb_sll`，调用 `sll2array`
-- `free_list` - 使用 `sll`，释放链表
-- `free_list_box` - 使用 `sllb`（在 `which implies` 中转换为 `sll`）
-
-**核心思想**：
-- 采用 `sllb_sll` **放弃尾指针精确跟踪**，避免精确性问题（详见 [precision_problem_analysis.md](precision_problem_analysis.md)）
-- 内部调用使用 `sll` 谓词的循环函数时，谓词转换链路清晰
-- **代价**：无法在函数返回后进行链表连接操作
-- **收益**：既然目标是转数组/释放/只读操作，不需要后续连接是可接受的
-
-**设计权衡**：
-- 如果内部需要调用带循环的 `sll` 函数（如 `sll2array`），保持 `sllbseg` 会导致精确性问题
-- 因为 `sll` 遍历会丢失 `pt` 与原始值的关联（存在量化变量在转换中失去联系）
-- 使用 `sllb_sll` 从一开始就放弃 `pt` 跟踪，与内部 `sll` 谓词完美匹配
-
-**关键引理**：
-- `sllb_sll_2_sll`（Strategy 35）：展开 `sllb_sll` 暴露内部 `sll`
-- `sll_2_sllb_sll`（Strategy 36）：从 `sll` 重建 `sllb_sll`
+详细的精确性问题分析参见 [precision_problem_analysis.md](precision_problem_analysis.md)。
 
 ---
 
