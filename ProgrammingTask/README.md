@@ -64,16 +64,20 @@ make
 ```
 
 生成的可执行文件：
-- `build/bin/whiled` - 主编译器
-- `build/bin/ast_pretty` - AST 格式化工具
+- `build/bin/whiled` - 主编译器（进行词法、语法和类型分析）
+- `build/bin/ast` - AST 查看工具（显示完整的AST结构）
+- `build/bin/ast_pretty` - AST 格式化工具（输出美化后的代码）
 
 ### 运行
 
 ```bash
-# 编译 WhileD 源文件
+# 编译 WhileD 源文件（类型检查）
 ./build/bin/whiled examples/simple_decl.wd
 
-# 查看 AST 结构
+# 查看AST
+./build/bin/ast examples/simple_decl.wd
+
+# 查看格式化的代码（AST美化输出）
 ./build/bin/ast_pretty examples/simple_decl.wd
 ```
 
@@ -98,11 +102,14 @@ make
 # 运行单个示例
 ./build/bin/whiled examples/example_1.wd
 
+# 查看AST
+./build/bin/ast examples/example_1.wd
+
+# 查看格式化的代码（AST美化输出）
+./build/bin/ast_pretty examples/example_1.wd
+
 # 运行全部示例
 ./tests/run_examples.sh
-
-# 查看 AST 结构
-./build/bin/ast_pretty examples/example_1.wd
 ```
 
 ## 使用示例

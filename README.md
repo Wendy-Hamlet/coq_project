@@ -86,7 +86,10 @@ make
 # 运行示例
 ./build/bin/whiled examples/example_1.wd
 
-# 查看 AST
+# 查看AST
+./build/bin/ast examples/example_1.wd
+
+# 查看格式化的代码（AST美化输出）
 ./build/bin/ast_pretty examples/example_1.wd
 
 # 运行测试

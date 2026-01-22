@@ -37,7 +37,7 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES)) \
 
 # Executables
 TARGET = $(BIN_DIR)/whiled
-TOOLS = $(BIN_DIR)/ast_pretty
+TOOLS = $(BIN_DIR)/ast_pretty $(BIN_DIR)/ast
 TEST_LEXER_BIN = $(BIN_DIR)/test_lexer
 TEST_PARSER_BIN = $(BIN_DIR)/test_parser
 
@@ -56,7 +56,15 @@ AST_PRETTY_OBJS = $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/symtab.o \
                   $(OBJ_DIR)/util.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o \
                   $(OBJ_DIR)/ast_printer.o
 
-$(TOOLS): tools/ast_pretty.c $(AST_PRETTY_OBJS)
+$(BIN_DIR)/ast_pretty: tools/ast_pretty.c $(AST_PRETTY_OBJS)
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
+
+# ast tool dependencies
+AST_OBJS = $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/symtab.o \
+           $(OBJ_DIR)/util.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o \
+           $(OBJ_DIR)/ast_dumper.o
+
+$(BIN_DIR)/ast: tools/ast.c $(AST_OBJS)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(YACC_HDR) | directories
@@ -90,10 +98,15 @@ clean:
 
 help:
 	@echo "Available targets:"
-	@echo "  make            - Build main project (whiled and ast_pretty)"
+	@echo "  make            - Build main project (whiled, ast_pretty, ast)"
 	@echo "  make test       - Build unit tests (test_lexer and test_parser)"
 	@echo "  make clean      - Remove all build artifacts"
 	@echo "  make help       - Show this help message"
+	@echo ""
+	@echo "Run tools:"
+	@echo "  ./build/bin/whiled [file.wd]      - Type check WhileD program"
+	@echo "  ./build/bin/ast_pretty [file.wd]  - Pretty-print formatted code"
+	@echo "  ./build/bin/ast [file.wd]         - Display AST in function call form"
 	@echo ""
 	@echo "Run tests:"
 	@echo "  ./build/bin/test_lexer [file.wd]"
