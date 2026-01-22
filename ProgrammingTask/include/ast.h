@@ -147,4 +147,8 @@ void ast_free_stmt(Stmt *s);
 void ast_print_expr(Expr *e, int indent);
 void ast_print_stmt(Stmt *s, int indent);
 
+/* AST dump utilities (function call form) */
+void ast_dump_expr(Expr *e, int indent);
+void ast_dump_stmt(Stmt *s, int indent);
+
 #endif

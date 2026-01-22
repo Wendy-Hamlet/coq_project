@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
-#include "ast_dumper.h"
 
 extern int yyparse();
 extern FILE *yyin;

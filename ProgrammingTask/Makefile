@@ -62,7 +62,7 @@ $(BIN_DIR)/ast_pretty: tools/ast_pretty.c $(AST_PRETTY_OBJS)
 # ast tool dependencies
 AST_OBJS = $(OBJ_DIR)/ast.o $(OBJ_DIR)/type.o $(OBJ_DIR)/symtab.o \
            $(OBJ_DIR)/util.o $(OBJ_DIR)/lexer.o $(OBJ_DIR)/parser.o \
-           $(OBJ_DIR)/ast_dumper.o
+           $(OBJ_DIR)/ast_printer.o
 
 $(BIN_DIR)/ast: tools/ast.c $(AST_OBJS)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -I$(BUILD_DIR) -o $@ $^
